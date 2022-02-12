@@ -79,7 +79,10 @@ static WCHAR gVolumeName[MAX_PATH + 1] = L"DOKAN";
 //std::unique_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>> _filenodes;
 //std::mutex m_mutex;
 
-struct Nodes{
+struct Context{
+    Context(){
+       _filenodes = std::make_unique<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
+    }
     std::unique_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>> _filenodes;
     std::mutex m_mutex;
 };
@@ -92,8 +95,11 @@ struct Nodes{
 
 
 // Helper getting the memfs filenodes context at each Dokan API call.
+//#define GET_FS_INSTANCE \
+//  reinterpret_cast<std::unordered_map<std::wstring, std::shared_ptr<filenode>>*>(DokanFileInfo->DokanOptions->GlobalContext)
+
 #define GET_FS_INSTANCE \
-  reinterpret_cast<std::unordered_map<std::wstring, std::shared_ptr<filenode>>*>(DokanFileInfo->DokanOptions->GlobalContext)
+  reinterpret_cast<Context*>(DokanFileInfo->DokanOptions->GlobalContext)
 
 //static void DbgPrint(LPCWSTR format, ...) {
 //    if (g_DebugMode) {
@@ -585,8 +591,9 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
             }
 
             if(creationDisposition == CREATE_NEW || creationDisposition == CREATE_ALWAYS){
-            //            filenodes->operator[](filename_str);
-                filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, true, FILE_ATTRIBUTE_DIRECTORY, SecurityContext));
+                std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+//                filenodes->m_mutex.lock()
+                filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, true, FILE_ATTRIBUTE_DIRECTORY, SecurityContext));
                 SecurityContext->AccessState.SecurityDescriptor = NULL;
                 securityAttrib.lpSecurityDescriptor = NULL;
 
@@ -754,7 +761,8 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 //        auto f =  std::make_shared<filenode>(filename_str, false, file_attributes_and_flags, SecurityContext);
 
         if(creationDisposition == CREATE_NEW){
-            filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, fileAttributesAndFlags, SecurityContext));
+            std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+            filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, fileAttributesAndFlags, SecurityContext));
             SecurityContext->AccessState.SecurityDescriptor = NULL;
             securityAttrib.lpSecurityDescriptor=NULL;
 
@@ -1663,9 +1671,10 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 //    }
 
     auto filename_str = std::wstring(FileName);
-    auto fit = filenodes->find(filename_str);
+    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+    auto fit = filenodes->_filenodes->find(filename_str);
     std::shared_ptr<filenode> f;
-    f=  (fit != filenodes->end()) ? fit->second : nullptr;
+    f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
 //    auto fnodes = _filenodes;
 
     DWORD status = STATUS_SUCCESS;
@@ -1782,9 +1791,10 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
     }
 
     auto filename_str = std::wstring(FileName);
-    auto fit = filenodes->find(filename_str);
+    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+    auto fit = filenodes->_filenodes->find(filename_str);
     std::shared_ptr<filenode> f;
-    f=  (fit != filenodes->end()) ? fit->second : nullptr;
+    f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
 
     if(f){
         std::lock_guard<std::mutex> securityLock(f->_data_mutex);
@@ -1832,7 +1842,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
         DOKAN_IO_SECURITY_CONTEXT SecurityContext;
         SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
 
-        filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, 0, &SecurityContext));
+        filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, 0, &SecurityContext));
 
         return STATUS_SUCCESS;
 
@@ -2405,10 +2415,10 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     dokanOperations.FindStreams = MirrorFindStreams;
     dokanOperations.Mounted = MirrorMounted;
 
-    Nodes m_nodes;
+    std::shared_ptr<Context> m_nodes;
+    m_nodes = std::make_shared<Context>();
 
-    m_nodes._filenodes = std::make_unique<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
-    dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(&m_nodes);
+    dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(m_nodes.get());
 
 
     DokanInit();
