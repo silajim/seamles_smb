@@ -296,109 +296,6 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     std::wstring filename_str(FileName);
 
-
-//    if(filename_str.empty()|| filename_str==LR"(\)"){
-////        return STATUS_ACCESS_DENIED;
-//        std::cout<< "---Empty Filename!" << std::endl;
-//        HANDLE ph = OpenProcess(PROCESS_QUERY_INFORMATION , FALSE , DokanFileInfo->ProcessId);
-//        if(ph!=NULL){
-//            WCHAR str[128];
-//            DWORD length =  GetProcessImageFileNameW(ph,str,128);
-//            if(length>0){
-//                std::wcout << L"\t process path " << std::wstring(str) << std::endl;
-//            }
-//        }
-//    }
-
-//    if (filename_str == L"\\System Volume Information" || filename_str == L"\\$RECYCLE.BIN") {
-//      return STATUS_NO_SUCH_FILE;
-//    }
-
-
-//    if(filename_str==LR"(\test.txt)" || filename_str==LR"(\***REMOVED***)"){
-//        std::cout << "TEST detected" << std::endl;
-//        SECURITY_INFORMATION secInfo = ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION;
-//        LPWSTR strAttrib;
-//        LPTSTR tst;
-//        ULONG size;
-//        std::cout <<"Convert Result " << ConvertSecurityDescriptorToStringSecurityDescriptorW(SecurityContext->AccessState.SecurityDescriptor,SDDL_REVISION_1, secInfo , &tst , &size ) << std::endl;
-//        DWORD error = GetLastError();
-//        std::wcerr<< "Error str " << error << std::endl;
-//        std::wstring secstr(tst);
-//        std::wcerr << "--- " << secstr << std::endl;
-//        DbgPrint(L"--- : %s\n", (const wchar_t*)tst);
-//        printf("%ls\n",(const wchar_t*)tst);
-
-//        DbgPrint(L"\tShareMode = 0x%x\n", ShareAccess);
-
-//        MirrorCheckFlag(ShareAccess, FILE_SHARE_READ);
-//        MirrorCheckFlag(ShareAccess, FILE_SHARE_WRITE);
-//        MirrorCheckFlag(ShareAccess, FILE_SHARE_DELETE);
-
-//        DbgPrint(L"\tDesiredAccess = 0x%x\n", DesiredAccess);
-
-//        MirrorCheckFlag(DesiredAccess, GENERIC_READ);
-//        MirrorCheckFlag(DesiredAccess, GENERIC_WRITE);
-//        MirrorCheckFlag(DesiredAccess, GENERIC_EXECUTE);
-
-//        MirrorCheckFlag(DesiredAccess, DELETE);
-//        MirrorCheckFlag(DesiredAccess, FILE_READ_DATA);
-//        MirrorCheckFlag(DesiredAccess, FILE_READ_ATTRIBUTES);
-//        MirrorCheckFlag(DesiredAccess, FILE_READ_EA);
-//        MirrorCheckFlag(DesiredAccess, READ_CONTROL);
-//        MirrorCheckFlag(DesiredAccess, FILE_WRITE_DATA);
-//        MirrorCheckFlag(DesiredAccess, FILE_WRITE_ATTRIBUTES);
-//        MirrorCheckFlag(DesiredAccess, FILE_WRITE_EA);
-//        MirrorCheckFlag(DesiredAccess, FILE_APPEND_DATA);
-//        MirrorCheckFlag(DesiredAccess, WRITE_DAC);
-//        MirrorCheckFlag(DesiredAccess, WRITE_OWNER);
-//        MirrorCheckFlag(DesiredAccess, SYNCHRONIZE);
-//        MirrorCheckFlag(DesiredAccess, FILE_EXECUTE);
-//        MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_READ);
-//        MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_WRITE);
-//        MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_EXECUTE);
-
-
-//        DbgPrint(L"\tFlagsAndAttributes = 0x%x\n", fileAttributesAndFlags);
-
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_ARCHIVE);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_COMPRESSED);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_DEVICE);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_DIRECTORY);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_ENCRYPTED);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_HIDDEN);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_INTEGRITY_STREAM);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NORMAL);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NO_SCRUB_DATA);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_OFFLINE);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_READONLY);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_REPARSE_POINT);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_SPARSE_FILE);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_SYSTEM);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_TEMPORARY);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_VIRTUAL);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_WRITE_THROUGH);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OVERLAPPED);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_NO_BUFFERING);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_RANDOM_ACCESS);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_SEQUENTIAL_SCAN);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_DELETE_ON_CLOSE);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_BACKUP_SEMANTICS);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_POSIX_SEMANTICS);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OPEN_REPARSE_POINT);
-//        MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OPEN_NO_RECALL);
-//        MirrorCheckFlag(fileAttributesAndFlags, SECURITY_ANONYMOUS);
-//        MirrorCheckFlag(fileAttributesAndFlags, SECURITY_IDENTIFICATION);
-//        MirrorCheckFlag(fileAttributesAndFlags, SECURITY_IMPERSONATION);
-//        MirrorCheckFlag(fileAttributesAndFlags, SECURITY_DELEGATION);
-//        MirrorCheckFlag(fileAttributesAndFlags, SECURITY_CONTEXT_TRACKING);
-//        MirrorCheckFlag(fileAttributesAndFlags, SECURITY_EFFECTIVE_ONLY);
-//        MirrorCheckFlag(fileAttributesAndFlags, SECURITY_SQOS_PRESENT);
-
-//        volatile int X=0;
-//    }
-
     DbgPrint(L"CreateFile : %s \n", filePath,FileName);
 
     if(filename_str==LR"(\***REMOVED***)"){
@@ -412,14 +309,6 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     PrintUserName(DokanFileInfo);
 
-
-
-    /*
-  if (ShareMode == 0 && AccessMode & FILE_WRITE_DATA)
-          ShareMode = FILE_SHARE_WRITE;
-  else if (ShareMode == 0)
-          ShareMode = FILE_SHARE_READ;
-  */
 
 
 
@@ -597,41 +486,6 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
                 SecurityContext->AccessState.SecurityDescriptor = NULL;
                 securityAttrib.lpSecurityDescriptor = NULL;
 
-//                // declare a security descriptor
-
-//                    SECURITY_DESCRIPTOR SD;
-
-//                    // initializes a new security descriptor. The InitializeSecurityDescriptor()
-
-//                    // function initializes a security descriptor to have no system access control list (SACL),
-
-//                    // no discretionary access control list (DACL), no owner, no primary group,
-
-//                    // and all control flags set to FALSE (NULL). Thus, except for its revision level, it is empty.
-
-//                   BOOL bInitOk = InitializeSecurityDescriptor(&SD, SECURITY_DESCRIPTOR_REVISION);
-
-//                    if(bInitOk)
-
-//                    {
-
-//    //                      wprintf(LInitializeSecurityDescriptor() is OK\n);
-
-//                          // sets information in a discretionary access control list (DACL).
-
-//                          // If a DACL is already present in the security descriptor, the DACL is replaced.
-
-//                          // give the security descriptor a Null Dacl
-
-//                          // done using the  TRUE, (PACL)NULL here
-
-//                         BOOL bSetOk = SetSecurityDescriptorDacl(&SD, TRUE,(PACL)NULL, FALSE);
-
-//                         if(bSetOk){
-//                             SecurityContext->AccessState.SecurityDescriptor = &SD;
-//                             securityAttrib.lpSecurityDescriptor=&SD;
-//                         }
-//                    }
             }
 
 
@@ -670,11 +524,6 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
                 }
             }
 
-//            auto fit = filenodes->find(filename_str);
-//            std::shared_ptr<filenode> f;
-//            f=  (fit != filenodes->end()) ? fit->second : nullptr;
-//            if(f)
-
             if(bSetOk){
                 SecurityContext->AccessState.SecurityDescriptor = &SD;
                 securityAttrib.lpSecurityDescriptor=&SD;
@@ -696,30 +545,7 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
                 DbgPrint(L"\terror code = %d\n\n", error);
 
 
-//                SECURITY_INFORMATION secInfo = ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION;
-//                LPWSTR strAttrib;
-//                LPTSTR tst;
-//                ULONG size;
-//                std::cout <<"Convert Result " << ConvertSecurityDescriptorToStringSecurityDescriptorW(SecurityContext->AccessState.SecurityDescriptor,SDDL_REVISION_1, secInfo , &tst , &size ) << std::endl;
-////                DWORD error = GetLastError();
-////                std::wcerr<< "Error str " << error << std::endl;
-//                std::wstring secstr(tst);
-////                std::wcerr << "--- " << secstr << std::endl;
-////                DbgPrint(L"--- : %s\n", (const wchar_t*)tst);
-////                printf("%ls\n",(const wchar_t*)tst);
                 status = DokanNtStatusFromWin32(error);
-
-                if(error == 1307 || error == 1308 || error == 5){
-//                    directory.emplace(std::wstring(filePath),secstr);
-//                    LocalFree(SecurityContext->AccessState.SecurityDescriptor);
-//                    SecurityContext->AccessState.SecurityDescriptor = NULL;
-//                    status = MirrorCreateFile(FileName, SecurityContext,DesiredAccess,  FileAttributes,ShareAccess,  CreateDisposition, CreateOptions,  DokanFileInfo);
-//                    auto filename_str = std::wstring(FileName);
-//                    _filenodes[filename_str] = std::make_shared<filenode>(filename_str, true, FILE_ATTRIBUTE_DIRECTORY, SecurityContext);
-//                    SecurityContext->AccessState.SecurityDescriptor = NULL;
-//                    status = MirrorCreateFile(FileName, SecurityContext,DesiredAccess,  FileAttributes,ShareAccess,  CreateDisposition, CreateOptions,  DokanFileInfo);
-
-                }
 
             } else {
                 DokanFileInfo->Context = (ULONG64)handle; // save the file handle in Context
@@ -731,12 +557,6 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
             }
         }
     } else {
-        // It is a create file request
-
-        // Cannot overwrite a hidden or system file if flag not set
-//        if (fileAttr != INVALID_FILE_ATTRIBUTES && ((!(fileAttributesAndFlags & FILE_ATTRIBUTE_HIDDEN) && (fileAttr & FILE_ATTRIBUTE_HIDDEN)) ||(!(fileAttributesAndFlags & FILE_ATTRIBUTE_SYSTEM) && (fileAttr & FILE_ATTRIBUTE_SYSTEM))) && (creationDisposition == TRUNCATE_EXISTING ||  creationDisposition == CREATE_ALWAYS))
-//            return STATUS_ACCESS_DENIED;
-
         // Cannot delete a read only file
         if ((fileAttr != INVALID_FILE_ATTRIBUTES && (fileAttr & FILE_ATTRIBUTE_READONLY) || (fileAttributesAndFlags & FILE_ATTRIBUTE_READONLY)) && (fileAttributesAndFlags & FILE_FLAG_DELETE_ON_CLOSE))
             return STATUS_CANNOT_DELETE;
@@ -752,64 +572,14 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
                 DbgPrint(L"\tImpersonateLoggedOnUser failed.\n");
             }
         }
-
-//        ACCESS_MASK generic_desiredaccess;
-//        DWORD creation_disposition;
-//        DWORD file_attributes_and_flags;
-
-//        DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition, &generic_desiredaccess, &file_attributes_and_flags, &creation_disposition);
-//        auto f =  std::make_shared<filenode>(filename_str, false, file_attributes_and_flags, SecurityContext);
-
         if(creationDisposition == CREATE_NEW){
             std::lock_guard<std::mutex> lk(filenodes->m_mutex);
             filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, fileAttributesAndFlags, SecurityContext));
             SecurityContext->AccessState.SecurityDescriptor = NULL;
             securityAttrib.lpSecurityDescriptor=NULL;
-
-//            // declare a security descriptor
-
-//                SECURITY_DESCRIPTOR SD;
-
-//                // initializes a new security descriptor. The InitializeSecurityDescriptor()
-
-//                // function initializes a security descriptor to have no system access control list (SACL),
-
-//                // no discretionary access control list (DACL), no owner, no primary group,
-
-//                // and all control flags set to FALSE (NULL). Thus, except for its revision level, it is empty.
-
-//               BOOL bInitOk = InitializeSecurityDescriptor(&SD, SECURITY_DESCRIPTOR_REVISION);
-
-//                if(bInitOk)
-
-//                {
-
-////                      wprintf(LInitializeSecurityDescriptor() is OK\n);
-
-//                      // sets information in a discretionary access control list (DACL).
-
-//                      // If a DACL is already present in the security descriptor, the DACL is replaced.
-
-//                      // give the security descriptor a Null Dacl
-
-//                      // done using the  TRUE, (PACL)NULL here
-
-//                     BOOL bSetOk = SetSecurityDescriptorDacl(&SD, TRUE,(PACL)NULL, FALSE);
-
-//                     if(bSetOk){
-//                         SecurityContext->AccessState.SecurityDescriptor = &SD;
-//                         securityAttrib.lpSecurityDescriptor=&SD;
-//                     }
-//                }
         }
 
 
-//        creationDisposition = FILE_READ_ATTRIBUTES;
-//        fileAttributesAndFlags = FILE_FLAG_OPEN_REPARSE_POINT;
-
-//        DesiredAccess = FILE_READ_ATTRIBUTES | READ_CONTROL | FILE_WRITE_DATA | FILE_WRITE_ATTRIBUTES| FILE_WRITE_EA |  FILE_APPEND_DATA |  SYNCHRONIZE |  STANDARD_RIGHTS_READ | STANDARD_RIGHTS_WRITE | STANDARD_RIGHTS_EXECUTE;
-//        ShareAccess = FILE_SHARE_READ;
-//        FileAttributes = 0;
 
         if(bSetOk){
             SecurityContext->AccessState.SecurityDescriptor = &SD;
@@ -817,15 +587,6 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
         }
 
         handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, creationDisposition, fileAttributesAndFlags, NULL);
-//        handle = CreateFile(
-//                    filePath,
-//                    DesiredAccess, // GENERIC_READ|GENERIC_WRITE|GENERIC_EXECUTE,
-//                    ShareAccess,
-//                    NULL, // security attribute
-//                    creationDisposition,
-//                    FileAttributes, // |FILE_FLAG_NO_BUFFERING,
-//                    NULL);                  // template file handle
-
         if (g_ImpersonateCallerUser && userTokenHandle != INVALID_HANDLE_VALUE) {
             // Clean Up operation for impersonate
             DWORD lastError = GetLastError();
@@ -838,36 +599,8 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
             error = GetLastError();
             DbgPrint(L"\terror code = %d\n\n", error);
 
-//            SECURITY_INFORMATION secInfo = ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION;
-//            SECURITY_INFORMATION secInfo = ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION;
-//            LPWSTR strAttrib;
-//            LPTSTR tst;
-//            ULONG size;
-//            std::cout <<"Convert Result " << ConvertSecurityDescriptorToStringSecurityDescriptorW(SecurityContext->AccessState.SecurityDescriptor,SDDL_REVISION_1, secInfo , &tst , &size ) << std::endl;
-//            std::wcerr<< "Error str " << error << std::endl;
-//            std::wstring secstr(tst);
-//            std::wcerr << "--- " << secstr << std::endl;
-//            DbgPrint(L"--- : %s\n", (const wchar_t*)tst);
-//            printf("%ls\n",(const wchar_t*)tst);
             status = DokanNtStatusFromWin32(error);
 
-            if(error == 1307 || error == 1308 || error == 5){
-//                std::wcout << "Emplace " << filePath<< " --- " << std::wstring(FileName) << std::endl;
-//                files.emplace(std::wstring(filePath),secstr);
-////                LocalFree(SecurityContext->AccessState.SecurityDescriptor);
-//                SecurityContext->AccessState.SecurityDescriptor = NULL;
-//                status = MirrorCreateFile(FileName, SecurityContext,DesiredAccess,  FileAttributes,ShareAccess,  CreateDisposition, CreateOptions,  DokanFileInfo);
-
-//                ACCESS_MASK generic_desiredaccess;
-//                DWORD creation_disposition;
-//                DWORD file_attributes_and_flags;
-
-//                DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition, &generic_desiredaccess, &file_attributes_and_flags, &creation_disposition);
-//                _filenodes[filename_str] = std::make_shared<filenode>(filename_str, false, file_attributes_and_flags, SecurityContext);
-//                SecurityContext->AccessState.SecurityDescriptor = NULL;
-//                status = MirrorCreateFile(FileName, SecurityContext,DesiredAccess,  FileAttributes,ShareAccess,  CreateDisposition, CreateOptions,  DokanFileInfo);
-
-            }
         } else {
 
             //Need to update FileAttributes with previous when Overwrite file
@@ -1620,55 +1353,10 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 
     DbgPrint(L"GetFileSecurity %s\n", filePath);
 
-//    MirrorCheckFlag(*SecurityInformation, FILE_SHARE_READ);
-//    MirrorCheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, DACL_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, SACL_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, LABEL_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, ATTRIBUTE_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, SCOPE_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, PROCESS_TRUST_LABEL_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, BACKUP_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, PROTECTED_DACL_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, PROTECTED_SACL_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_DACL_SECURITY_INFORMATION);
-//    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_SACL_SECURITY_INFORMATION);
-
-//    requestingSaclInfo = ((*SecurityInformation & SACL_SECURITY_INFORMATION) || (*SecurityInformation & BACKUP_SECURITY_INFORMATION));
-
-//    if (!g_HasSeSecurityPrivilege) {
-//        *SecurityInformation &= ~SACL_SECURITY_INFORMATION;
-//        *SecurityInformation &= ~BACKUP_SECURITY_INFORMATION;
-//    }
-
     DbgPrint(L"  Opening new handle with READ_CONTROL access\n");
-//    HANDLE handle = CreateFile(filePath, READ_CONTROL | ((requestingSaclInfo && g_HasSeSecurityPrivilege)? ACCESS_SYSTEM_SECURITY: 0),
-//                FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
-//                NULL, // security attribute
-//                OPEN_EXISTING,
-//                FILE_FLAG_BACKUP_SEMANTICS, // |FILE_FLAG_NO_BUFFERING,
-//                NULL);
 
-//    if (!handle || handle == INVALID_HANDLE_VALUE) {
-//        DbgPrint(L"\tinvalid handle\n\n");
-//        int error = GetLastError();
-//        return DokanNtStatusFromWin32(error);
-//    }
     std::wstring strFileName(filePath);
     bool changed = false;
-//    if(DokanFileInfo->IsDirectory){
-//        if(directory.count(strFileName)!=0){
-//            ConvertStringSecurityDescriptorToSecurityDescriptorW(directory[strFileName].c_str(),SDDL_REVISION_1,&SecurityDescriptor,NULL);
-//            changed = true;
-//        }
-
-//    }else{
-//        if(files.count(strFileName)!=0){
-//            ConvertStringSecurityDescriptorToSecurityDescriptorW(files[strFileName].c_str(),SDDL_REVISION_1,&SecurityDescriptor,NULL);
-//            changed = true;
-//        }
-//    }
 
     auto filename_str = std::wstring(FileName);
     std::lock_guard<std::mutex> lk(filenodes->m_mutex);
@@ -1733,6 +1421,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 //    CloseHandle(handle);
 
     return status;
+    }
 }
 
 static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR SecurityDescriptor, ULONG SecurityDescriptorLength, PDOKAN_FILE_INFO DokanFileInfo) {
