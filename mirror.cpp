@@ -1711,56 +1711,18 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 
     }else{
 
-//        PSECURITY_DESCRIPTOR pSD = NULL;
-//        DWORD pSD_size=0;
-//        GetSecurityInfo(handle,SE_FILE_OBJECT,secInfo,NULL,NULL,NULL,NULL,&pSD);
-//        pSD_size = GetSecurityDescriptorLength(pSD);
-
-
-         if (!GetFileSecurityW(filePath, *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
-             int error = GetLastError();
-             if (error == ERROR_INSUFFICIENT_BUFFER) {
-                 DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
-//                 CloseHandle(handle);
-                 return  STATUS_BUFFER_OVERFLOW;
-             } else {
-                 DbgPrint(L"  GetUserObjectSecurity error: %d\n", error);
-//                 CloseHandle(handle);
-                 status = DokanNtStatusFromWin32(error);
-             }
-         }
-
-
-//        if (!GetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
-//            int error = GetLastError();
-//            if (error == ERROR_INSUFFICIENT_BUFFER) {
-//                DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
-//                CloseHandle(handle);
-//                return  STATUS_BUFFER_OVERFLOW;
-//            } else {
-//                DbgPrint(L"  GetUserObjectSecurity error: %d\n", error);
-//                CloseHandle(handle);
-//                status = DokanNtStatusFromWin32(error);
-//            }
-//        }
-    }
-
-//        std::wcout << "Str Filename " << strFileName << std::endl;
-
-//        if(DokanFileInfo->IsDirectory){
-//            if(directory.count(strFileName)!=0){
-//                ConvertStringSecurityDescriptorToSecurityDescriptorW(directory[strFileName].c_str(),SDDL_REVISION_1,&SecurityDescriptor,NULL);
-//                status = STATUS_SUCCESS;
-//            }
-
-//        }else{
-//            if(files.count(strFileName)!=0){
-//                std::wcout << "Cache file " << files[strFileName]<< std::endl;
-//                ConvertStringSecurityDescriptorToSecurityDescriptorW(files[strFileName].c_str(),SDDL_REVISION_1,&SecurityDescriptor,NULL);
-//                status = STATUS_SUCCESS;
-//            }
-//        }
-
+        if (!GetFileSecurityW(filePath, *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
+            int error = GetLastError();
+            if (error == ERROR_INSUFFICIENT_BUFFER) {
+                DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
+                //                 CloseHandle(handle);
+                return  STATUS_BUFFER_OVERFLOW;
+            } else {
+                DbgPrint(L"  GetUserObjectSecurity error: %d\n", error);
+                //                 CloseHandle(handle);
+                status = DokanNtStatusFromWin32(error);
+            }
+        }
 
     // Ensure the Security Descriptor Length is set
     DWORD securityDescriptorLength = GetSecurityDescriptorLength(SecurityDescriptor);
@@ -1846,85 +1808,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
 
         return STATUS_SUCCESS;
 
-//        if(error == 1307 || error == 1308 || error == 5){
-
-////            SECURITY_INFORMATION secInfo = ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION;
-////            LPWSTR strAttrib;
-////            LPTSTR tst;
-////            ULONG size;
-////            ConvertSecurityDescriptorToStringSecurityDescriptorW(SecurityDescriptor,SDDL_REVISION_1, secInfo , &tst , &size );
-////            DWORD error = GetLastError();
-////            std::wcerr<< "Error str " << error << std::endl;
-////            std::wstring secstr(tst);
-
-////            if(DokanFileInfo->IsDirectory){
-////                directory.emplace(std::wstring(filePath),secstr);
-////                return STATUS_SUCCESS;
-////            }else{
-////                files.emplace(std::wstring(filePath),secstr);
-////                return STATUS_SUCCESS;
-////            }
-////            LocalFree(SecurityDescriptor);
-////            SecurityContext->AccessState.SecurityDescriptor = NULL;
-////            MirrorCreateFile(FileName, SecurityContext,DesiredAccess,  FileAttributes,ShareAccess,  CreateDisposition, CreateOptions,  DokanFileInfo);
-
-////            auto filename_str = std::wstring(FileName);
-////            auto fit = _filenodes.find(filename_str);
-////            std::shared_ptr<filenode> f;
-////            f=  (fit != _filenodes.end()) ? fit->second : nullptr;
-
-////            if (!f) return STATUS_OBJECT_NAME_NOT_FOUND;
-
-
-
-
-//            std::lock_guard<std::mutex> securityLock(f->security);
-
-//            // SetPrivateObjectSecurity - ObjectsSecurityDescriptor
-//            // The memory for the security descriptor must be allocated from the process
-//            // heap (GetProcessHeap) with the HeapAlloc function.
-//            // https://devblogs.microsoft.com/oldnewthing/20170727-00/?p=96705
-
-////            GetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)
-
-//            SECURITY_INFORMATION secInfo = ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | OWNER_SECURITY_INFORMATION;
-
-//            PSECURITY_DESCRIPTOR pSD = NULL;
-//            DWORD pSD_size=0;
-//            GetSecurityInfo(handle,SE_FILE_OBJECT,secInfo,NULL,NULL,NULL,NULL,&pSD);
-//            pSD_size = GetSecurityDescriptorLength(pSD);
-
-
-//            HANDLE pHeap = GetProcessHeap();
-//            PSECURITY_DESCRIPTOR heapSecurityDescriptor = HeapAlloc(pHeap, 0, pSD_size);
-//            if (!heapSecurityDescriptor) return STATUS_INSUFFICIENT_RESOURCES;
-//            // Copy our current descriptor into heap memory
-//            memcpy(heapSecurityDescriptor, pSD, pSD_size);
-
-//            static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
-//                                                    FILE_GENERIC_EXECUTE,
-//                                                    FILE_ALL_ACCESS};
-
-//            if (!SetPrivateObjectSecurity(*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)) {
-//              HeapFree(pHeap, 0, heapSecurityDescriptor);
-//              return DokanNtStatusFromWin32(GetLastError());
-//            }
-
-
-//            DWORD fileattrib = GetFileAttributesW(FileName);
-//            DOKAN_IO_SECURITY_CONTEXT sec_context;
-//            sec_context.AccessState.SecurityDescriptor = heapSecurityDescriptor;
-//            filenodes->emplace(filename_str , std::make_shared<filenode>(filename_str, false, fileattrib, &sec_context));
-
-//            HeapFree(pHeap, 0, heapSecurityDescriptor);
-//            LocalFree(pSD);
-
-//            return STATUS_SUCCESS;
-
-
-//        }
-
-        return DokanNtStatusFromWin32(error);
+//        return DokanNtStatusFromWin32(error);
     }
     return STATUS_SUCCESS;
 }
@@ -2063,43 +1947,7 @@ NTSYSCALLAPI NTSTATUS NTAPI NtQueryInformationFile(
 NTSTATUS DOKAN_CALLBACK
 MirrorFindStreams(LPCWSTR FileName, PFillFindStreamData FillFindStreamData,PVOID FindStreamContext,
                   PDOKAN_FILE_INFO DokanFileInfo) {
-//    WCHAR filePath[DOKAN_MAX_PATH];
-//    HANDLE hFind;
-//    WIN32_FIND_STREAM_DATA findData;
-//    DWORD error;
-//    int count = 0;
 
-//    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
-
-//    DbgPrint(L"FindStreams :%s\n", filePath);
-
-//    hFind = FindFirstStreamW(filePath, FindStreamInfoStandard, &findData, 0);
-
-//    if (hFind == INVALID_HANDLE_VALUE) {
-//        error = GetLastError();
-//        DbgPrint(L"\tinvalid file handle. Error is %u\n\n", error);
-//        return DokanNtStatusFromWin32(error);
-//    }
-
-//    FillFindStreamData(&findData, DokanFileInfo);
-//    count++;
-
-//    while (FindNextStreamW(hFind, &findData) != 0) {
-//        FillFindStreamData(&findData, DokanFileInfo);
-//        count++;
-//    }
-
-//    error = GetLastError();
-//    FindClose(hFind);
-
-//    if (error != ERROR_HANDLE_EOF) {
-//        DbgPrint(L"\tFindNextStreamW error. Error is %u\n\n", error);
-//        return DokanNtStatusFromWin32(error);
-//    }
-
-//    DbgPrint(L"\tFindStreams return %d entries in %s\n\n", count, filePath);
-
-//    return STATUS_SUCCESS;
     UNREFERENCED_PARAMETER(DokanFileInfo);
 
      WCHAR filePath[DOKAN_MAX_PATH];
