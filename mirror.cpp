@@ -2261,8 +2261,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
             dokanOptions.MountPoint = MountPoint;
             break;
         case L't':
-            CHECK_CMD_ARG(command, argc)
-                   dokanOptions.SingleThread = TRUE;
+            dokanOptions.SingleThread = TRUE;
             break;
         case L'd':
             g_DebugMode = TRUE;
