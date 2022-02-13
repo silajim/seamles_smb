@@ -81,9 +81,9 @@ static WCHAR gVolumeName[MAX_PATH + 1] = L"DOKAN";
 
 struct Context{
     Context(){
-       _filenodes = std::make_unique<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
+       _filenodes = std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
     }
-    std::unique_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>> _filenodes;
+    std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>> _filenodes;
     std::mutex m_mutex;
 };
 
@@ -1359,11 +1359,13 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
     bool changed = false;
 
     auto filename_str = std::wstring(FileName);
-    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+//    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+    filenodes->m_mutex.lock();
     auto fit = filenodes->_filenodes->find(filename_str);
     std::shared_ptr<filenode> f;
     f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
-//    auto fnodes = _filenodes;
+
+    filenodes->m_mutex.unlock();
 
     DWORD status = STATUS_SUCCESS;
 
@@ -1442,10 +1444,12 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
     }
 
     auto filename_str = std::wstring(FileName);
-    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+//    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+    filenodes->m_mutex.lock();
     auto fit = filenodes->_filenodes->find(filename_str);
     std::shared_ptr<filenode> f;
     f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
+    filenodes->m_mutex.unlock();
 
     if(f){
         std::lock_guard<std::mutex> securityLock(f->_data_mutex);
@@ -1492,8 +1496,9 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
 
         DOKAN_IO_SECURITY_CONTEXT SecurityContext;
         SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
-
+        filenodes->m_mutex.lock();
         filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, 0, &SecurityContext));
+        filenodes->m_mutex.unlock();
 
         return STATUS_SUCCESS;
 
@@ -1758,7 +1763,7 @@ void ShowUsage() {
     fwprintf(stderr, L"Option is missing an argument.\n");                   \
     return EXIT_FAILURE;                                                     \
     }                                                                          \
-    }
+}
 
 int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     int status;
