@@ -48,9 +48,14 @@ http://dokan-dev.github.io
 
 #include <boost/filesystem.hpp>
 #include <boost/serialization/map.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include "DbgPrint.h"
+
+#include <ostream>
+#include <algorithm>
 
 // Enable Long Paths on Windows 10 version 1607 and later by changing
 // the OS configuration (see Microsoft own documentation for the steps)
@@ -80,11 +85,18 @@ static WCHAR gVolumeName[MAX_PATH + 1] = L"DOKAN";
 //std::mutex m_mutex;
 
 struct Context{
-    Context(){
-       _filenodes = std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
+    Context(): _filenodes(std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>()) {
+//       _filenodes = std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
     }
     std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>> _filenodes;
     std::mutex m_mutex;
+
+    template<class Archive>
+        void serialize(Archive & ar, const unsigned int version)
+        {
+            ar &_filenodes;
+        }
+
 };
 
 // Directory map of directoryname / sub filenodes in the scope.
@@ -1788,8 +1800,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         switch (towlower(argv[command][1])) {
         case L'r':
             CHECK_CMD_ARG(command, argc)
-                    wcscpy_s(RootDirectory, sizeof(RootDirectory) / sizeof(WCHAR),
-                             argv[command]);
+                    wcscpy_s(RootDirectory, sizeof(RootDirectory) / sizeof(WCHAR), argv[command]);
             if (!wcslen(RootDirectory)) {
                 DbgPrint(L"Invalid RootDirectory\n");
                 return EXIT_FAILURE;
@@ -1958,9 +1969,18 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
     std::shared_ptr<Context> m_nodes;
     m_nodes = std::make_shared<Context>();
+    m_nodes->_filenodes = std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
 
     dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(m_nodes.get());
 
+    std::wstring rootdir (RootDirectory);
+    std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
+    std::filebuf filer;
+    filer.open(rootdir+L".dat",std::ios_base::in|std::ios_base::binary);
+    std::istream is(&filer);
+    boost::archive::binary_iarchive ir(is, boost::archive::no_header);
+
+    ir >> m_nodes->_filenodes;
 
     DokanInit();
     status = DokanMain(&dokanOptions, &dokanOperations);
@@ -1994,6 +2014,17 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         fprintf(stderr, "Unknown error: %d\n", status);
         break;
     }
+
+//    std::wstring rootdir (RootDirectory);
+//    std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
+    std::filebuf file;
+    file.open(rootdir+L".dat",std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
+    std::ostream os(&file);
+    boost::archive::binary_oarchive ar(os, boost::archive::no_header);
+
+    ar << m_nodes->_filenodes;
+
+    file.close();
 
 //    std::cout << "Directories Cached" << std::endl;
 //    for(auto d : directory){

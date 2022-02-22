@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 5.0.0, 2022-02-05T16:09:30. -->
+<!-- Written by QtCreator 5.0.0, 2022-02-15T20:18:05. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -94,7 +94,7 @@
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">MSVC2019</value>
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">MSVC2019</value>
    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">{05b90594-5502-4129-9a9e-8f5e66215792}</value>
-   <value type="int" key="ProjectExplorer.Target.ActiveBuildConfiguration">1</value>
+   <value type="int" key="ProjectExplorer.Target.ActiveBuildConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveDeployConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">0</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
@@ -106,11 +106,11 @@
 -DCMAKE_PREFIX_PATH:STRING=%{Qt:QT_INSTALL_PREFIX}
 -DCMAKE_C_COMPILER:STRING=%{Compiler:Executable:C}
 -DCMAKE_CXX_COMPILER:STRING=%{Compiler:Executable:Cxx}</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">G:\Dokan Library-1.5.0\sample\build-mirror-MSVC2019-Debug</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">G:/Dokan Library-1.5.0/sample/build-mirror-MSVC2019-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <valuelist type="QVariantList" key="CMakeProjectManager.MakeStep.BuildTargets">
-       <value type="QString">all</value>
+       <value type="QString">ALL_BUILD</value>
       </valuelist>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Build</value>
@@ -297,14 +297,14 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">dokan_mirror</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.CMakeRunConfiguration.dokan_mirror</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">dokan_mirror</value>
-    <value type="QString" key="RunConfiguration.Arguments">/o /r \\DESKTOP-9SUDM3R\Data /l Z: /v Laptop</value>
+    <value type="QString" key="RunConfiguration.Arguments">/o /r \\192.168.1.4\temp /l Z: /v tmp</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseTerminal">true</value>
-    <value type="QString" key="RunConfiguration.WorkingDirectory.default">G:/Dokan Library-1.5.0/sample/build-mirror-MSVC2019-Release</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory.default">G:/Dokan Library-1.5.0/sample/build-mirror-MSVC2019-Debug/Debug</value>
    </valuemap>
    <value type="int" key="ProjectExplorer.Target.RunConfigurationCount">1</value>
   </valuemap>

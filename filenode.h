@@ -41,13 +41,15 @@ THE SOFTWARE.
 #include <string>
 #include <unordered_map>
 
-struct security_informations : std::mutex {
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/serialization.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+struct security_informations {
   std::unique_ptr<byte[]> descriptor = nullptr;
-  DWORD descriptor_size = 0;
+  unsigned long descriptor_size = 0;
 
   security_informations() = default;
-//  security_informations(const security_informations &) = delete;
-//  security_informations &operator=(const security_informations &) = delete;
 
   void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor) {
     if (!securitydescriptor) return;
@@ -55,6 +57,26 @@ struct security_informations : std::mutex {
     descriptor = std::make_unique<byte[]>(descriptor_size);
     memcpy(descriptor.get(), securitydescriptor, descriptor_size);
   }
+
+private:
+  friend class boost::serialization::access;
+     template <class Archive>
+        void save(Archive& ar, unsigned int version) const {
+         ar &descriptor_size;
+         for(unsigned int i=0;i<descriptor_size;i++){
+             ar &descriptor[i];
+         }
+     }
+
+    template <class Archive>
+        void load(Archive& ar, unsigned int version) {
+            ar &descriptor_size;
+            descriptor = std::make_unique<byte[]>(descriptor_size);
+            for(unsigned int i=0;i<descriptor_size;i++){
+                ar &descriptor[i];
+            }
+        }
+        BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 //struct filetimes {
@@ -104,8 +126,10 @@ class filenode {
 //  std::unordered_map<std::wstring, std::shared_ptr<filenode> > get_streams();
 
   // No lock needed above
-  std::atomic<bool> is_directory = false;
-  std::atomic<DWORD> attributes = 0;
+//  std::atomic<bool> is_directory = false;
+//  std::atomic<DWORD> attributes = 0;
+  bool is_directory = false;
+  DWORD attributes = 0;
 //  LONGLONG fileindex = 0;
 //  std::shared_ptr<filenode> main_stream;
 
@@ -116,6 +140,16 @@ class filenode {
  private:
   filenode() = default;
 
+   friend class boost::serialization::access;
+   template <class Archive>
+   void serialize(Archive& ar, const unsigned int version)
+   {
+       ar &is_directory;
+       ar &attributes;
+//       ar &_data_mutex;
+       ar &_fileName;
+       ar & (security);
+   }
 
   // _data_mutex need to be aquired
 //  std::vector<uint8_t> _data;
