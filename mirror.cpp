@@ -45,6 +45,7 @@ http://dokan-dev.github.io
 #include <handleapi.h>
 #include <processthreadsapi.h>
 #include <Psapi.h>
+#include <libloaderapi.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/serialization/map.hpp>
@@ -302,7 +303,7 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
 //    std::wcout << "Create File, FILENAME " << std::wstring(FileName) << std::endl;
 
-    DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition,&genericDesiredAccess, &fileAttributesAndFlags, &creationDisposition);
+//    DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition,&genericDesiredAccess, &fileAttributesAndFlags, &creationDisposition);
 
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);    
 
@@ -310,13 +311,13 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     DbgPrint(L"CreateFile : %s \n", filePath,FileName);
 
-    if(filename_str==LR"(\***REMOVED***)"){
-        if(!(fileAttributesAndFlags & FILE_ATTRIBUTE_DIRECTORY) ){
-            fileAttributesAndFlags |= FILE_ATTRIBUTE_DIRECTORY;
-            DokanFileInfo->IsDirectory = TRUE;
+//    if(filename_str==LR"(\***REMOVED***)"){
+//        if(!(fileAttributesAndFlags & FILE_ATTRIBUTE_DIRECTORY) ){
+//            fileAttributesAndFlags |= FILE_ATTRIBUTE_DIRECTORY;
+//            DokanFileInfo->IsDirectory = TRUE;
 
-        }
-    }
+//        }
+//    }
 
 
     PrintUserName(DokanFileInfo);
@@ -335,23 +336,35 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
     MirrorCheckFlag(DesiredAccess, GENERIC_READ);
     MirrorCheckFlag(DesiredAccess, GENERIC_WRITE);
     MirrorCheckFlag(DesiredAccess, GENERIC_EXECUTE);
+    MirrorCheckFlag(DesiredAccess, GENERIC_ALL);
 
     MirrorCheckFlag(DesiredAccess, DELETE);
-    MirrorCheckFlag(DesiredAccess, FILE_READ_DATA);
-    MirrorCheckFlag(DesiredAccess, FILE_READ_ATTRIBUTES);
-    MirrorCheckFlag(DesiredAccess, FILE_READ_EA);
     MirrorCheckFlag(DesiredAccess, READ_CONTROL);
-    MirrorCheckFlag(DesiredAccess, FILE_WRITE_DATA);
-    MirrorCheckFlag(DesiredAccess, FILE_WRITE_ATTRIBUTES);
-    MirrorCheckFlag(DesiredAccess, FILE_WRITE_EA);
-    MirrorCheckFlag(DesiredAccess, FILE_APPEND_DATA);
     MirrorCheckFlag(DesiredAccess, WRITE_DAC);
     MirrorCheckFlag(DesiredAccess, WRITE_OWNER);
     MirrorCheckFlag(DesiredAccess, SYNCHRONIZE);
+
+    MirrorCheckFlag(DesiredAccess, FILE_READ_DATA);
+    MirrorCheckFlag(DesiredAccess, FILE_READ_ATTRIBUTES);
+    MirrorCheckFlag(DesiredAccess, FILE_READ_EA);
+
+    MirrorCheckFlag(DesiredAccess, FILE_WRITE_DATA);
+    MirrorCheckFlag(DesiredAccess, FILE_WRITE_ATTRIBUTES);
+    MirrorCheckFlag(DesiredAccess, FILE_WRITE_EA);
+
+    MirrorCheckFlag(DesiredAccess, FILE_APPEND_DATA);
+
+
     MirrorCheckFlag(DesiredAccess, FILE_EXECUTE);
     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_READ);
     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_WRITE);
     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_EXECUTE);
+    MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_REQUIRED);
+
+    MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_ALL);
+    MirrorCheckFlag(DesiredAccess, ACCESS_SYSTEM_SECURITY);
+
+
 
     // When filePath is a directory, needs to change the flag so that the file can
     // be opened.
@@ -378,42 +391,82 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
          DesiredAccess &= ~WRITE_OWNER;
     }
 
-    DbgPrint(L"\tFlagsAndAttributes = 0x%x\n", fileAttributesAndFlags);
+    if(DesiredAccess & ACCESS_SYSTEM_SECURITY ){
+         DesiredAccess &= ~ACCESS_SYSTEM_SECURITY;
+    }
 
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_ARCHIVE);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_COMPRESSED);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_DEVICE);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_DIRECTORY);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_ENCRYPTED);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_HIDDEN);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_INTEGRITY_STREAM);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NORMAL);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NO_SCRUB_DATA);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_OFFLINE);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_READONLY);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_REPARSE_POINT);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_SPARSE_FILE);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_SYSTEM);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_TEMPORARY);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_VIRTUAL);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_WRITE_THROUGH);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OVERLAPPED);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_NO_BUFFERING);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_RANDOM_ACCESS);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_SEQUENTIAL_SCAN);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_DELETE_ON_CLOSE);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_BACKUP_SEMANTICS);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_POSIX_SEMANTICS);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OPEN_REPARSE_POINT);
-    MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OPEN_NO_RECALL);
-    MirrorCheckFlag(fileAttributesAndFlags, SECURITY_ANONYMOUS);
-    MirrorCheckFlag(fileAttributesAndFlags, SECURITY_IDENTIFICATION);
-    MirrorCheckFlag(fileAttributesAndFlags, SECURITY_IMPERSONATION);
-    MirrorCheckFlag(fileAttributesAndFlags, SECURITY_DELEGATION);
-    MirrorCheckFlag(fileAttributesAndFlags, SECURITY_CONTEXT_TRACKING);
-    MirrorCheckFlag(fileAttributesAndFlags, SECURITY_EFFECTIVE_ONLY);
-    MirrorCheckFlag(fileAttributesAndFlags, SECURITY_SQOS_PRESENT);
+     DbgPrint(L"\tDesiredAccessEffective = 0x%x\n", DesiredAccess);
+
+     MirrorCheckFlag(DesiredAccess, GENERIC_READ);
+     MirrorCheckFlag(DesiredAccess, GENERIC_WRITE);
+     MirrorCheckFlag(DesiredAccess, GENERIC_EXECUTE);
+     MirrorCheckFlag(DesiredAccess, GENERIC_ALL);
+
+     MirrorCheckFlag(DesiredAccess, DELETE);
+     MirrorCheckFlag(DesiredAccess, READ_CONTROL);
+     MirrorCheckFlag(DesiredAccess, WRITE_DAC);
+     MirrorCheckFlag(DesiredAccess, WRITE_OWNER);
+     MirrorCheckFlag(DesiredAccess, SYNCHRONIZE);
+
+     MirrorCheckFlag(DesiredAccess, FILE_READ_DATA);
+     MirrorCheckFlag(DesiredAccess, FILE_READ_ATTRIBUTES);
+     MirrorCheckFlag(DesiredAccess, FILE_READ_EA);
+
+     MirrorCheckFlag(DesiredAccess, FILE_WRITE_DATA);
+     MirrorCheckFlag(DesiredAccess, FILE_WRITE_ATTRIBUTES);
+     MirrorCheckFlag(DesiredAccess, FILE_WRITE_EA);
+
+     MirrorCheckFlag(DesiredAccess, FILE_APPEND_DATA);
+
+
+     MirrorCheckFlag(DesiredAccess, FILE_EXECUTE);
+     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_READ);
+     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_WRITE);
+     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_EXECUTE);
+     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_REQUIRED);
+
+     MirrorCheckFlag(DesiredAccess, STANDARD_RIGHTS_ALL);
+     MirrorCheckFlag(DesiredAccess, ACCESS_SYSTEM_SECURITY);
+
+
+     DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition,&genericDesiredAccess, &fileAttributesAndFlags, &creationDisposition);
+
+     DbgPrint(L"\tFlagsAndAttributes = 0x%x\n", fileAttributesAndFlags);
+
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_ARCHIVE);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_COMPRESSED);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_DEVICE);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_DIRECTORY);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_ENCRYPTED);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_HIDDEN);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_INTEGRITY_STREAM);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NORMAL);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_NO_SCRUB_DATA);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_OFFLINE);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_READONLY);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_REPARSE_POINT);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_SPARSE_FILE);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_SYSTEM);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_TEMPORARY);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_VIRTUAL);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_WRITE_THROUGH);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OVERLAPPED);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_NO_BUFFERING);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_RANDOM_ACCESS);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_SEQUENTIAL_SCAN);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_DELETE_ON_CLOSE);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_BACKUP_SEMANTICS);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_POSIX_SEMANTICS);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OPEN_REPARSE_POINT);
+     MirrorCheckFlag(fileAttributesAndFlags, FILE_FLAG_OPEN_NO_RECALL);
+     MirrorCheckFlag(fileAttributesAndFlags, SECURITY_ANONYMOUS);
+     MirrorCheckFlag(fileAttributesAndFlags, SECURITY_IDENTIFICATION);
+     MirrorCheckFlag(fileAttributesAndFlags, SECURITY_IMPERSONATION);
+     MirrorCheckFlag(fileAttributesAndFlags, SECURITY_DELEGATION);
+     MirrorCheckFlag(fileAttributesAndFlags, SECURITY_CONTEXT_TRACKING);
+     MirrorCheckFlag(fileAttributesAndFlags, SECURITY_EFFECTIVE_ONLY);
+     MirrorCheckFlag(fileAttributesAndFlags, SECURITY_SQOS_PRESENT);
 
     if (g_CaseSensitive)
         fileAttributesAndFlags |= FILE_FLAG_POSIX_SEMANTICS;
@@ -440,6 +493,9 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
             // Should we return some error?
         }
     }
+
+
+
 
     // declare a security descriptor
 
@@ -494,7 +550,7 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
             if(creationDisposition == CREATE_NEW || creationDisposition == CREATE_ALWAYS){
                 std::lock_guard<std::mutex> lk(filenodes->m_mutex);
 //                filenodes->m_mutex.lock()
-                filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, true, FILE_ATTRIBUTE_DIRECTORY, SecurityContext));
+                filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, true, fileAttributesAndFlags, SecurityContext));
                 SecurityContext->AccessState.SecurityDescriptor = NULL;
                 securityAttrib.lpSecurityDescriptor = NULL;
 
@@ -536,13 +592,13 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
                 }
             }
 
-            if(bSetOk){
-                SecurityContext->AccessState.SecurityDescriptor = &SD;
-                securityAttrib.lpSecurityDescriptor=&SD;
-            }
+//            if(bSetOk){
+//                SecurityContext->AccessState.SecurityDescriptor = &SD;
+//                securityAttrib.lpSecurityDescriptor=&SD;
+//            }
 
             // FILE_FLAG_BACKUP_SEMANTICS is required for opening directory handles
-            handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, OPEN_EXISTING, fileAttributesAndFlags | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+            handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, OPEN_EXISTING, 0 | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
             if (g_ImpersonateCallerUser && userTokenHandle != INVALID_HANDLE_VALUE) {
                 // Clean Up operation for impersonate
@@ -589,16 +645,21 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
             filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, fileAttributesAndFlags, SecurityContext));
             SecurityContext->AccessState.SecurityDescriptor = NULL;
             securityAttrib.lpSecurityDescriptor=NULL;
+        }else if(creationDisposition == OPEN_EXISTING) {
+            SecurityContext->AccessState.SecurityDescriptor = NULL;
+            securityAttrib.lpSecurityDescriptor=NULL;
+
+//            DokanMapKernelToUserCreateFileFlags()
         }
 
 
 
-        if(bSetOk){
-            SecurityContext->AccessState.SecurityDescriptor = &SD;
-            securityAttrib.lpSecurityDescriptor=&SD;
-        }
+//        if(bSetOk){
+//            SecurityContext->AccessState.SecurityDescriptor = &SD;
+//            securityAttrib.lpSecurityDescriptor=&SD;
+//        }
 
-        handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, creationDisposition, fileAttributesAndFlags, NULL);
+        handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, creationDisposition, 0, NULL);
         if (g_ImpersonateCallerUser && userTokenHandle != INVALID_HANDLE_VALUE) {
             // Clean Up operation for impersonate
             DWORD lastError = GetLastError();
@@ -885,6 +946,8 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileInformation( LPCWSTR FileName, LPBY_
     HANDLE handle = (HANDLE)DokanFileInfo->Context;
     BOOL opened = FALSE;
 
+     auto filenodes = GET_FS_INSTANCE;
+
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
 
     DbgPrint(L"GetFileInfo : %s\n", filePath);
@@ -921,7 +984,19 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileInformation( LPCWSTR FileName, LPBY_
                 return DokanNtStatusFromWin32(error);
             }
 
+            auto filename_str = std::wstring(FileName);
+        //    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+            filenodes->m_mutex.lock();
+            auto fit = filenodes->_filenodes->find(filename_str);
+            std::shared_ptr<filenode> f;
+            f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
+            filenodes->m_mutex.unlock();
+
+            if(f)
+                HandleFileInformation->dwFileAttributes = f->attributes;
+            else{
             HandleFileInformation->dwFileAttributes = find.dwFileAttributes;
+            }
             HandleFileInformation->ftCreationTime = find.ftCreationTime;
             HandleFileInformation->ftLastAccessTime = find.ftLastAccessTime;
             HandleFileInformation->ftLastWriteTime = find.ftLastWriteTime;
@@ -931,8 +1006,18 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileInformation( LPCWSTR FileName, LPBY_
             FindClose(findHandle);
         }
     } else {
-        DbgPrint(L"\tGetFileInformationByHandle success, file size = %d\n",
-                 HandleFileInformation->nFileSizeLow);
+        auto filename_str = std::wstring(FileName);
+    //    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+        filenodes->m_mutex.lock();
+        auto fit = filenodes->_filenodes->find(filename_str);
+        std::shared_ptr<filenode> f;
+        f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
+        filenodes->m_mutex.unlock();
+
+        if(f)
+            HandleFileInformation->dwFileAttributes = f->attributes;
+
+        DbgPrint(L"\tGetFileInformationByHandle success, file size = %d\n", HandleFileInformation->nFileSizeLow);
     }
 
     DbgPrint(L"FILE ATTRIBUTE  = %d\n", HandleFileInformation->dwFileAttributes);
@@ -1271,6 +1356,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetAllocationSize(
 
 static NTSTATUS DOKAN_CALLBACK MirrorSetFileAttributes(LPCWSTR FileName, DWORD FileAttributes, PDOKAN_FILE_INFO DokanFileInfo) {
     UNREFERENCED_PARAMETER(DokanFileInfo);
+    auto filenodes = GET_FS_INSTANCE;
 
     WCHAR filePath[DOKAN_MAX_PATH];
 
@@ -1279,10 +1365,27 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileAttributes(LPCWSTR FileName, DWORD F
     DbgPrint(L"SetFileAttributes %s 0x%x\n", filePath, FileAttributes);
 
     if (FileAttributes != 0) {
-        if (!SetFileAttributes(filePath, FileAttributes)) {
-            DWORD error = GetLastError();
-            DbgPrint(L"\terror code = %d\n\n", error);
-            return DokanNtStatusFromWin32(error);
+//        if (!SetFileAttributes(filePath, FileAttributes)) {
+//            DWORD error = GetLastError();
+//            DbgPrint(L"\terror code = %d\n\n", error);
+//            return DokanNtStatusFromWin32(error);
+//        }
+        auto filename_str = std::wstring(FileName);
+    //    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+        filenodes->m_mutex.lock();
+        auto fit = filenodes->_filenodes->find(filename_str);
+        std::shared_ptr<filenode> f;
+        f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
+        filenodes->m_mutex.unlock();
+
+        if(f){
+            f->attributes = FileAttributes;
+            return STATUS_SUCCESS;
+        }else{
+            filenodes->m_mutex.lock();
+            filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, FileAttributes, nullptr));
+            filenodes->m_mutex.unlock();
+             return STATUS_SUCCESS;
         }
     } else {
         // case FileAttributes == 0 :
@@ -1413,7 +1516,10 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 
     }else{
 
-        if (!GetFileSecurityW(filePath, *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
+        wchar_t path[MAX_PATH];
+        GetModuleFileNameW(NULL,path,MAX_PATH);
+
+        if (!GetFileSecurityW(path, *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
             int error = GetLastError();
             if (error == ERROR_INSUFFICIENT_BUFFER) {
                 DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
@@ -1501,20 +1607,20 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
 
         return STATUS_SUCCESS;
 
-    }else
-    if (!SetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor)) {
-        int error = GetLastError();        
-        DbgPrint(L"  SetUserObjectSecurity error: %d\n", error);
+    }else{
+//    if (!SetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor)) {
+//        int error = GetLastError();
+//        DbgPrint(L"  SetUserObjectSecurity error: %d\n", error);
 
+//        return STATUS_SUCCESS;
+
+////        return DokanNtStatusFromWin32(error);
+//    }
         DOKAN_IO_SECURITY_CONTEXT SecurityContext;
         SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
         filenodes->m_mutex.lock();
         filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, 0, &SecurityContext));
         filenodes->m_mutex.unlock();
-
-        return STATUS_SUCCESS;
-
-//        return DokanNtStatusFromWin32(error);
     }
     return STATUS_SUCCESS;
 }
@@ -1531,53 +1637,53 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetVolumeInformation(
 
     wcscpy_s(VolumeNameBuffer, VolumeNameSize, gVolumeName);
 
-    if (VolumeSerialNumber)
-        *VolumeSerialNumber = 0x19831116;
-    if (MaximumComponentLength)
+
+        *VolumeSerialNumber = 0x19831116;  
         *MaximumComponentLength = 255;
-    if (FileSystemFlags) {
-        *FileSystemFlags = FILE_SUPPORTS_REMOTE_STORAGE | FILE_UNICODE_ON_DISK |
-                FILE_PERSISTENT_ACLS | FILE_NAMED_STREAMS;
-        if (g_CaseSensitive)
-            *FileSystemFlags = FILE_CASE_SENSITIVE_SEARCH | FILE_CASE_PRESERVED_NAMES;
-    }
+    *FileSystemFlags = FILE_CASE_SENSITIVE_SEARCH | FILE_CASE_PRESERVED_NAMES |
+                        FILE_SUPPORTS_REMOTE_STORAGE | FILE_UNICODE_ON_DISK |
+                        FILE_NAMED_STREAMS;
 
-    volumeRoot[0] = RootDirectory[0];
-    volumeRoot[1] = ':';
-    volumeRoot[2] = '\\';
-    volumeRoot[3] = '\0';
+//    volumeRoot[0] = RootDirectory[0];
+//    volumeRoot[1] = ':';
+//    volumeRoot[2] = '\\';
+//    volumeRoot[3] = '\0';
 
-    if (GetVolumeInformation(volumeRoot, NULL, 0, NULL, MaximumComponentLength,
-                             &fsFlags, FileSystemNameBuffer,
-                             FileSystemNameSize)) {
+//    if (GetVolumeInformation(volumeRoot, NULL, 0, NULL, MaximumComponentLength,
+//                             &fsFlags, FileSystemNameBuffer,
+//                             FileSystemNameSize)) {
 
-        if (FileSystemFlags)
-            *FileSystemFlags &= fsFlags;
+//        if (FileSystemFlags)
+//            *FileSystemFlags &= fsFlags;
 
-        if (MaximumComponentLength) {
-            DbgPrint(L"GetVolumeInformation: max component length %u\n",
-                     *MaximumComponentLength);
-        }
-        if (FileSystemNameBuffer) {
-            DbgPrint(L"GetVolumeInformation: file system name %s\n",
-                     FileSystemNameBuffer);
-        }
-        if (FileSystemFlags) {
-            DbgPrint(L"GetVolumeInformation: got file system flags 0x%08x,"
-                     L" returning 0x%08x\n",
-                     fsFlags, *FileSystemFlags);
-        }
-    } else {
+//        if (MaximumComponentLength) {
+//            DbgPrint(L"GetVolumeInformation: max component length %u\n",
+//                     *MaximumComponentLength);
+//        }
+//        if (FileSystemNameBuffer) {
+//            DbgPrint(L"GetVolumeInformation: file system name %s\n",
+//                     FileSystemNameBuffer);
+//        }
+//        if (FileSystemFlags) {
+//            DbgPrint(L"GetVolumeInformation: got file system flags 0x%08x,"
+//                     L" returning 0x%08x\n",
+//                     fsFlags, *FileSystemFlags);
+//        }
+//    } else {
 
-        DbgPrint(L"GetVolumeInformation: unable to query underlying fs,"
-                 L" using defaults.  Last error = %u\n",
-                 GetLastError());
+//        DbgPrint(L"GetVolumeInformation: unable to query underlying fs,"
+//                 L" using defaults.  Last error = %u\n",
+//                 GetLastError());
 
-        // File system name could be anything up to 10 characters.
-        // But Windows check few feature availability based on file system name.
-        // For this, it is recommended to set NTFS or FAT here.
-        wcscpy_s(FileSystemNameBuffer, FileSystemNameSize, L"NTFS");
-    }
+//        // File system name could be anything up to 10 characters.
+//        // But Windows check few feature availability based on file system name.
+//        // For this, it is recommended to set NTFS or FAT here.
+//        wcscpy_s(FileSystemNameBuffer, FileSystemNameSize, L"NTFS");
+//    }
+
+
+
+    wcscpy_s(FileSystemNameBuffer, FileSystemNameSize, L"NTFS");
 
     return STATUS_SUCCESS;
 }
@@ -1788,6 +1894,8 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         return EXIT_FAILURE;
     }
 
+
+
     g_DebugMode = FALSE;
     g_UseStdErr = FALSE;
     g_CaseSensitive = FALSE;
@@ -1975,12 +2083,12 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
     std::wstring rootdir (RootDirectory);
     std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
-    std::filebuf filer;
-    filer.open(rootdir+L".dat",std::ios_base::in|std::ios_base::binary);
-    std::istream is(&filer);
-    boost::archive::binary_iarchive ir(is, boost::archive::no_header);
+//    std::filebuf filer;
+//    filer.open(rootdir+L".dat",std::ios_base::in|std::ios_base::binary);
+//    std::istream is(&filer);
+//    boost::archive::binary_iarchive ir(is, boost::archive::no_header);
 
-    ir >> m_nodes->_filenodes;
+//    ir >> m_nodes->_filenodes;
 
     DokanInit();
     status = DokanMain(&dokanOptions, &dokanOperations);
@@ -2023,8 +2131,31 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     boost::archive::binary_oarchive ar(os, boost::archive::no_header);
 
     ar << m_nodes->_filenodes;
-
     file.close();
+
+
+
+    std::shared_ptr<Context> m_nodes2;
+    m_nodes2 = std::make_shared<Context>();
+    m_nodes2->_filenodes = std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
+
+
+    std::filebuf filer;
+    filer.open(rootdir+L".dat",std::ios_base::in|std::ios_base::binary);
+    std::istream is(&filer);
+    boost::archive::binary_iarchive ir(is, boost::archive::no_header);
+    ir >> m_nodes2->_filenodes;
+
+    for(auto node : *m_nodes->_filenodes.get()){
+        std::wcout << "key " << node.first << "size " << node.second->security.descriptor_size << std::endl;
+
+    }
+
+
+    for(auto node : *m_nodes2->_filenodes.get()){
+        std::wcout << "key " << node.first << "size " << node.second->security.descriptor_size << std::endl;
+    }
+
 
 //    std::cout << "Directories Cached" << std::endl;
 //    for(auto d : directory){
