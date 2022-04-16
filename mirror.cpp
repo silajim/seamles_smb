@@ -27,6 +27,9 @@ http://dokan-dev.github.io
 
 */
 
+#include <windows.h>
+
+#pragma comment(lib, "advapi32.lib")
 #include "include/dokan/dokan.h"
 #include "include/dokan/fileinfo.h"
 #include <malloc.h>
@@ -57,6 +60,13 @@ http://dokan-dev.github.io
 
 #include <ostream>
 #include <algorithm>
+#include "ramdiskmanager.h"
+#include "filesecutiryprocessor.h"
+
+
+#include <stdio.h>
+#include <aclapi.h>
+#include <tchar.h>
 
 // Enable Long Paths on Windows 10 version 1607 and later by changing
 // the OS configuration (see Microsoft own documentation for the steps)
@@ -87,16 +97,25 @@ static WCHAR gVolumeName[MAX_PATH + 1] = L"DOKAN";
 
 struct Context{
     Context(): _filenodes(std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>()) {
-//       _filenodes = std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
+        sProcessor = new FileSecutiryProcessor("B:\\");
     }
+
+    ~Context(){
+        delete sProcessor;
+    }
+
     std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>> _filenodes;
     std::mutex m_mutex;
 
     template<class Archive>
-        void serialize(Archive & ar, const unsigned int version)
-        {
-            ar &_filenodes;
-        }
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar &_filenodes;
+    }
+
+
+
+    FileSecutiryProcessor *sProcessor = nullptr;
 
 };
 
@@ -113,6 +132,7 @@ struct Context{
 
 #define GET_FS_INSTANCE \
   reinterpret_cast<Context*>(DokanFileInfo->DokanOptions->GlobalContext)
+
 
 //static void DbgPrint(LPCWSTR format, ...) {
 //    if (g_DebugMode) {
@@ -145,6 +165,323 @@ struct Context{
 static WCHAR RootDirectory[DOKAN_MAX_PATH] = L"C:";
 static WCHAR MountPoint[DOKAN_MAX_PATH] = L"M:\\";
 static WCHAR UNCName[DOKAN_MAX_PATH] = L"";
+
+#include <atlstr.h>
+
+CString ConvertSidToString(PSID pSID)
+{
+    // Check input pointer
+    ATLASSERT( pSID != NULL );
+    if ( pSID == NULL )
+    {
+        AtlThrow( E_POINTER );
+    }
+
+    // Get string corresponding to SID
+    LPTSTR pszSID = NULL;
+    if ( ! ConvertSidToStringSidW( pSID, &pszSID ) )
+    {
+        AtlThrowLastWin32();
+    }
+
+    // Deep copy result in a CString instance
+    CString strSID( pszSID );
+
+    // Release buffer allocated by ConvertSidToStringSid API
+    LocalFree( pszSID );
+    pszSID = NULL;
+
+    // Return string representation of the SID
+    return strSID;
+}
+
+
+bool getCurrentSid(CString &sid){
+    //
+        // Open the access token associated with the calling process
+        //
+        HANDLE hToken = NULL;
+        if ( ! OpenProcessToken( GetCurrentProcess(), TOKEN_QUERY, &hToken ) )
+        {
+            DbgPrint( L"OpenProcessToken failed. GetLastError returned: %d\n",GetLastError());
+            return -1;
+        }
+
+        //
+        // Get the size of the memory buffer needed for the SID
+        //
+        DWORD dwBufferSize = 0;
+        if ( ! GetTokenInformation( hToken, TokenUser, NULL, 0, &dwBufferSize ) &&
+             ( GetLastError() != ERROR_INSUFFICIENT_BUFFER ) )
+        {
+            DbgPrint( L"GetTokenInformation failed. GetLastError returned: %d\n", GetLastError());
+
+            // Cleanup
+            CloseHandle( hToken );
+            hToken = NULL;
+
+            return -1;
+        }
+
+
+        //
+        // Allocate buffer for user token data
+        //
+        std::vector<BYTE> buffer;
+        buffer.resize( dwBufferSize );
+        PTOKEN_USER pTokenUser = reinterpret_cast<PTOKEN_USER>( &buffer[0] );
+
+
+        //
+        // Retrieve the token information in a TOKEN_USER structure
+        //
+        if ( ! GetTokenInformation( hToken, TokenUser, pTokenUser, dwBufferSize, &dwBufferSize))
+        {
+            DbgPrint( L"2 GetTokenInformation failed. GetLastError returned: %d\n", GetLastError());
+
+            // Cleanup
+            CloseHandle( hToken );
+            hToken = NULL;
+
+            return -1;
+        }
+
+
+        //
+        // Check if SID is valid
+        //
+        if ( ! IsValidSid( pTokenUser->User.Sid ) )
+        {
+            DbgPrint( (L"The owner SID is invalid.\n") );
+            // Cleanup
+            CloseHandle(hToken);
+            hToken = NULL;
+
+            return -1;
+        }
+
+
+        //
+        // Print SID string
+        //
+
+        sid =  ConvertSidToString( pTokenUser->User.Sid ).GetString();
+
+        DbgPrint( (L"User SID: %s\n"),sid.GetString());
+
+        // Cleanup
+        CloseHandle(hToken);
+        hToken = NULL;
+}
+
+
+DWORD generateDefaultSD(PSECURITY_DESCRIPTOR *sd){
+    CString csid;
+    if(!getCurrentSid(csid)){
+        DbgPrint(L"getCurrentSid ERROR");
+        return GetLastError();
+    }
+
+    std::wstring stringSD = L"D:AI(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;";
+    stringSD.append(csid.GetString());
+    stringSD += L")";
+
+    if(!ConvertStringSecurityDescriptorToSecurityDescriptorW(stringSD.c_str(),SDDL_REVISION_1,sd,NULL)){
+        DbgPrint( L" ConvertStringSecurityDescriptorToSecurityDescriptorW ERROR. GetLastError returned: %d\n", GetLastError());
+        return GetLastError();
+    }
+
+    return STATUS_SUCCESS;
+}
+
+
+
+//From https://docs.microsoft.com/da-dk/windows/win32/secauthz/creating-a-security-descriptor-for-a-new-object-in-c--
+
+//size_t generateDefaultSD(PSECURITY_DESCRIPTOR *sd){
+//    DWORD dwRes, dwDisposition;
+//       PSID pEveryoneSID = NULL, pAdminSID = NULL;
+//       PACL pACL = NULL;
+//       PSECURITY_DESCRIPTOR pSD = NULL;
+//       EXPLICIT_ACCESS ea[2];
+//       SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
+//       SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+//       SECURITY_ATTRIBUTES sa;
+////       LONG lRes;
+//       HKEY hkSub = NULL;
+
+//       DbgPrint(L"generateDefaultSD");
+
+//       // Create a well-known SID for the Everyone group.
+//       if(!AllocateAndInitializeSid(&SIDAuthWorld, 1,
+//                        SECURITY_WORLD_RID,
+//                        0, 0, 0, 0, 0, 0, 0,
+//                        &pEveryoneSID))
+//       {
+//           _tprintf(_T("AllocateAndInitializeSid Error %u\n"), GetLastError());
+////           goto Cleanup;
+
+//           if (pEveryoneSID)
+//               FreeSid(pEveryoneSID);
+//           if (pAdminSID)
+//               FreeSid(pAdminSID);
+//           if (pACL)
+//               LocalFree(pACL);
+//           if (pSD)
+//               LocalFree(pSD);
+//           if (hkSub)
+//               RegCloseKey(hkSub);
+//           return -1;
+//       }
+
+//       // Initialize an EXPLICIT_ACCESS structure for an ACE.
+//       // The ACE will allow Everyone read access to the key.
+//       ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
+//       ea[0].grfAccessPermissions = KEY_READ;
+//       ea[0].grfAccessMode = SET_ACCESS;
+//       ea[0].grfInheritance= NO_INHERITANCE;
+//       ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+//       ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+//       ea[0].Trustee.ptstrName  = (LPTSTR) pEveryoneSID;
+
+//       // Create a SID for the BUILTIN\Administrators group.
+//       if(! AllocateAndInitializeSid(&SIDAuthNT, 2,
+//                        SECURITY_BUILTIN_DOMAIN_RID,
+//                        DOMAIN_ALIAS_RID_ADMINS,
+//                        0, 0, 0, 0, 0, 0,
+//                        &pAdminSID))
+//       {
+//           _tprintf(_T("AllocateAndInitializeSid Error %u\n"), GetLastError());
+////           goto Cleanup;
+//           if (pEveryoneSID)
+//               FreeSid(pEveryoneSID);
+//           if (pAdminSID)
+//               FreeSid(pAdminSID);
+//           if (pACL)
+//               LocalFree(pACL);
+//           if (pSD)
+//               LocalFree(pSD);
+//           if (hkSub)
+//               RegCloseKey(hkSub);
+//           return -1;
+//       }
+
+//       // Initialize an EXPLICIT_ACCESS structure for an ACE.
+//       // The ACE will allow the Administrators group full access to
+//       // the key.
+//       ea[1].grfAccessPermissions = KEY_ALL_ACCESS;
+//       ea[1].grfAccessMode = SET_ACCESS;
+//       ea[1].grfInheritance= NO_INHERITANCE;
+//       ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+//       ea[1].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+//       ea[1].Trustee.ptstrName  = (LPTSTR) pAdminSID;
+
+//       // Create a new ACL that contains the new ACEs.
+//       dwRes = SetEntriesInAcl(2, ea, NULL, &pACL);
+//       if (ERROR_SUCCESS != dwRes)
+//       {
+//           _tprintf(_T("SetEntriesInAcl Error %u\n"), GetLastError());
+////           goto Cleanup;
+//           if (pEveryoneSID)
+//               FreeSid(pEveryoneSID);
+//           if (pAdminSID)
+//               FreeSid(pAdminSID);
+//           if (pACL)
+//               LocalFree(pACL);
+//           if (pSD)
+//               LocalFree(pSD);
+//           if (hkSub)
+//               RegCloseKey(hkSub);
+//           return -1;
+//       }
+
+//       // Initialize a security descriptor.
+//       pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
+//       if (NULL == pSD)
+//       {
+//           _tprintf(_T("LocalAlloc Error %u\n"), GetLastError());
+////           goto Cleanup;
+//           if (pEveryoneSID)
+//               FreeSid(pEveryoneSID);
+//           if (pAdminSID)
+//               FreeSid(pAdminSID);
+//           if (pACL)
+//               LocalFree(pACL);
+//           if (pSD)
+//               LocalFree(pSD);
+//           if (hkSub)
+//               RegCloseKey(hkSub);
+//           return -1;
+//       }
+
+//       if (!InitializeSecurityDescriptor(pSD,  SECURITY_DESCRIPTOR_REVISION))
+//       {
+//           _tprintf(_T("InitializeSecurityDescriptor Error %u\n"),       GetLastError());
+////           goto Cleanup;
+//           if (pEveryoneSID)
+//               FreeSid(pEveryoneSID);
+//           if (pAdminSID)
+//               FreeSid(pAdminSID);
+//           if (pACL)
+//               LocalFree(pACL);
+//           if (pSD)
+//               LocalFree(pSD);
+//           if (hkSub)
+//               RegCloseKey(hkSub);
+//           return -1;
+//       }
+
+//       // Add the ACL to the security descriptor.
+//       if (!SetSecurityDescriptorDacl(pSD,
+//               TRUE,     // bDaclPresent flag
+//               pACL,
+//               FALSE))   // not a default DACL
+//       {
+//           _tprintf(_T("SetSecurityDescriptorDacl Error %u\n"),
+//                   GetLastError());
+////           goto Cleanup;
+//           if (pEveryoneSID)
+//               FreeSid(pEveryoneSID);
+//           if (pAdminSID)
+//               FreeSid(pAdminSID);
+//           if (pACL)
+//               LocalFree(pACL);
+//           if (pSD)
+//               LocalFree(pSD);
+//           if (hkSub)
+//               RegCloseKey(hkSub);
+//           return -1;
+//       }
+
+//       *sd = pSD;
+
+////       // Initialize a security attributes structure.
+////       sa.nLength = sizeof (SECURITY_ATTRIBUTES);
+////       sa.lpSecurityDescriptor = pSD;
+////       sa.bInheritHandle = FALSE;
+
+////       // Use the security attributes to set the security descriptor
+////       // when you create a key.
+////       lRes = RegCreateKeyEx(HKEY_CURRENT_USER, _T("mykey"), 0, _T(""), 0,
+////               KEY_READ | KEY_WRITE, &sa, &hkSub, &dwDisposition);
+////       _tprintf(_T("RegCreateKeyEx result %u\n"), lRes );
+
+
+//       if (pEveryoneSID)
+//           FreeSid(pEveryoneSID);
+//       if (pAdminSID)
+//           FreeSid(pAdminSID);
+//       if (pACL)
+//           LocalFree(pACL);
+////       if (pSD)
+////           LocalFree(pSD);
+//       if (hkSub)
+//           RegCloseKey(hkSub);
+
+//       return 0;
+
+//}
+
 
 static void GetFilePath(PWCHAR filePath, ULONG numberOfElements, LPCWSTR FileName) {
     wcsncpy_s(filePath, numberOfElements, RootDirectory, wcslen(RootDirectory));
@@ -310,6 +647,8 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
     std::wstring filename_str(FileName);
 
     DbgPrint(L"CreateFile : %s \n", filePath,FileName);
+
+
 
 //    if(filename_str==LR"(\***REMOVED***)"){
 //        if(!(fileAttributesAndFlags & FILE_ATTRIBUTE_DIRECTORY) ){
@@ -528,10 +867,10 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
         bSetOk = SetSecurityDescriptorDacl(&SD, TRUE,(PACL)NULL, FALSE);
 
-//        if(bSetOk){
-//            SecurityContext->AccessState.SecurityDescriptor = &SD;
-//            securityAttrib.lpSecurityDescriptor=&SD;
-//        }
+        if(bSetOk){
+            SecurityContext->AccessState.SecurityDescriptor = &SD;
+            securityAttrib.lpSecurityDescriptor=&SD;
+        }
     }
 
     if (DokanFileInfo->IsDirectory) {
@@ -1468,7 +1807,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 
     DbgPrint(L"GetFileSecurity %s\n", filePath);
 
-    DbgPrint(L"  Opening new handle with READ_CONTROL access\n");
+//    DbgPrint(L"  Opening new handle with READ_CONTROL access\n");
 
     std::wstring strFileName(filePath);
     bool changed = false;
@@ -1485,60 +1824,175 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
     DWORD status = STATUS_SUCCESS;
 
     if(f){
+//        // We have a Security Descriptor but we need to extract only informations
+//        // requested 1 - Convert the Security Descriptor to SDDL string with the
+//        // informations requested
+
+////        HANDLE pHeap = GetProcessHeap();
+////        ULONG Size = 0;
+//        DWORD dwLength = 0;
+
+//        GetPrivateObjectSecurity(f->security.descriptor.get(),*SecurityInformation,NULL,0,LengthNeeded);
+
+//        if(*LengthNeeded>BufferLength){
+//            return STATUS_BUFFER_OVERFLOW;
+//        }
+
+//        PSECURITY_DESCRIPTOR SecurityDescriptorTmp =  (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, BufferLength);
+
+
+//        GetPrivateObjectSecurity(f->security.descriptor.get(),*SecurityInformation,SecurityDescriptorTmp,BufferLength,&dwLength);
+
+//        // 3 - Copy the new SecurityDescriptor to destination
+//        memcpy(SecurityDescriptor, SecurityDescriptorTmp, dwLength);
+//        LocalFree(SecurityDescriptorTmp);
+
         // We have a Security Descriptor but we need to extract only informations
         // requested 1 - Convert the Security Descriptor to SDDL string with the
         // informations requested
-        LPTSTR pStringBuffer = NULL;
-        if (!ConvertSecurityDescriptorToStringSecurityDescriptor(f->security.descriptor.get(), SDDL_REVISION_1, *SecurityInformation, &pStringBuffer, NULL)) {
-          return STATUS_NOT_IMPLEMENTED;
-        }
+//        LPTSTR pStringBuffer = NULL;
+//        if (!ConvertSecurityDescriptorToStringSecurityDescriptor(f->security.descriptor.get(), SDDL_REVISION_1, *SecurityInformation, &pStringBuffer, NULL)) {
+//          return STATUS_NOT_IMPLEMENTED;
+//        }
 
-        // 2 - Convert the SDDL string back to Security Descriptor
-        PSECURITY_DESCRIPTOR SecurityDescriptorTmp = NULL;
-        ULONG Size = 0;
-        if (!ConvertStringSecurityDescriptorToSecurityDescriptor(pStringBuffer, SDDL_REVISION_1, &SecurityDescriptorTmp, &Size)) {
-          LocalFree(pStringBuffer);
-          return STATUS_NOT_IMPLEMENTED;
-        }
-        LocalFree(pStringBuffer);
+//        // 2 - Convert the SDDL string back to Security Descriptor
+//        PSECURITY_DESCRIPTOR SecurityDescriptorTmp = NULL;
+//        ULONG Size = 0;
+//        if (!ConvertStringSecurityDescriptorToSecurityDescriptor(pStringBuffer, SDDL_REVISION_1, &SecurityDescriptorTmp, &Size)) {
+//          LocalFree(pStringBuffer);
+//          return STATUS_NOT_IMPLEMENTED;
+//        }
+//        LocalFree(pStringBuffer);
 
-        *LengthNeeded = Size;
-        if (Size > BufferLength) {
-          LocalFree(SecurityDescriptorTmp);
-          return STATUS_BUFFER_OVERFLOW;
-        }
+//        *LengthNeeded = Size;
+//        if (Size > BufferLength) {
+//          LocalFree(SecurityDescriptorTmp);
+//          return STATUS_BUFFER_OVERFLOW;
+//        }
 
-        // 3 - Copy the new SecurityDescriptor to destination
-        memcpy(SecurityDescriptor, SecurityDescriptorTmp, Size);
-        LocalFree(SecurityDescriptorTmp);
+//        // 3 - Copy the new SecurityDescriptor to destination
+//        memcpy(SecurityDescriptor, SecurityDescriptorTmp, Size);
+//        LocalFree(SecurityDescriptorTmp);
 
-        status = STATUS_SUCCESS;
+//        status = STATUS_SUCCESS;
+
+      return filenodes->sProcessor->GetSecurity(FileName, SecurityInformation,  SecurityDescriptor, BufferLength,  LengthNeeded,  DokanFileInfo,f->security.descriptor.get());
 
     }else{
+        return filenodes->sProcessor->GetSecurity(FileName, SecurityInformation,  SecurityDescriptor, BufferLength,  LengthNeeded,  DokanFileInfo);
+//        wchar_t path[MAX_PATH];
+//        GetModuleFileNameW(NULL,path,MAX_PATH);
 
-        wchar_t path[MAX_PATH];
-        GetModuleFileNameW(NULL,path,MAX_PATH);
+//        DbgPrint(L"GetFileSecurity is dir  %d\n",DokanFileInfo->IsDirectory);
 
-        if (!GetFileSecurityW(path, *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
-            int error = GetLastError();
-            if (error == ERROR_INSUFFICIENT_BUFFER) {
-                DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
-                //                 CloseHandle(handle);
-                return  STATUS_BUFFER_OVERFLOW;
-            } else {
-                DbgPrint(L"  GetUserObjectSecurity error: %d\n", error);
-                //                 CloseHandle(handle);
-                status = DokanNtStatusFromWin32(error);
-            }
-        }
+//        std::wstring::size_type pos = std::wstring(path).find_last_of(L"\\/");
+//         std::wstring pathstr(path);
 
-    // Ensure the Security Descriptor Length is set
-    DWORD securityDescriptorLength = GetSecurityDescriptorLength(SecurityDescriptor);
-    DbgPrint(L"  GetUserObjectSecurity return true,  *LengthNeeded = "
-             L"securityDescriptorLength \n");
-    *LengthNeeded = securityDescriptorLength;
+//         if(DokanFileInfo->IsDirectory){
+//             pathstr =  std::wstring(path).substr(0, pos);
 
-//    CloseHandle(handle);
+//         }
+
+//         MirrorCheckFlag(*SecurityInformation, FILE_ATTRIBUTE_ARCHIVE);
+
+//        if (!GetFileSecurityW(pathstr.c_str() , *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
+//            int error = GetLastError();
+//            if (error == ERROR_INSUFFICIENT_BUFFER) {
+//                DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
+//                //                 CloseHandle(handle);
+//                return  STATUS_BUFFER_OVERFLOW;
+//            } else {
+//                DbgPrint(L"  GetUserObjectSecurity error: %d\n", error);
+//                //                 CloseHandle(handle);
+//                status = DokanNtStatusFromWin32(error);
+//            }
+//        }
+
+//        if(SecurityDescriptor){
+//        DbgPrint(L"SD Length : %d \n",GetSecurityDescriptorLength(SecurityDescriptor));
+
+//        LPTSTR pStringBuffer = NULL;
+//        ConvertSecurityDescriptorToStringSecurityDescriptor(SecurityDescriptor, SDDL_REVISION_1, ATTRIBUTE_SECURITY_INFORMATION|DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|LABEL_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION|SACL_SECURITY_INFORMATION|SCOPE_SECURITY_INFORMATION|PROTECTED_DACL_SECURITY_INFORMATION|PROTECTED_SACL_SECURITY_INFORMATION|UNPROTECTED_DACL_SECURITY_INFORMATION|UNPROTECTED_SACL_SECURITY_INFORMATION, &pStringBuffer, NULL);
+
+//        DbgPrint(L"SD : %s \n", pStringBuffer);
+//        }
+
+//        PSECURITY_DESCRIPTOR psd=nullptr;
+
+//        DWORD ret = generateDefaultSD(&psd)        ;
+
+//        if(ret != STATUS_SUCCESS){
+//            return GetLastError();
+//        }
+
+//        auto _f = std::make_shared<filenode>(filename_str, DokanFileInfo->IsDirectory, 0, nullptr);
+//        _f->security.SetDescriptor(psd);
+
+//        filenodes->_filenodes->emplace(filename_str,_f);
+
+//        LocalFree(psd);
+
+
+//        f = _f;
+
+//        LPTSTR pStringBuffer = NULL;
+//        if (!ConvertSecurityDescriptorToStringSecurityDescriptor(f->security.descriptor.get(), SDDL_REVISION_1, *SecurityInformation, &pStringBuffer, NULL)) {
+//          return STATUS_NOT_IMPLEMENTED;
+//        }
+
+//        // 2 - Convert the SDDL string back to Security Descriptor
+//        PSECURITY_DESCRIPTOR SecurityDescriptorTmp = NULL;
+//        ULONG Size = 0;
+//        if (!ConvertStringSecurityDescriptorToSecurityDescriptor(pStringBuffer, SDDL_REVISION_1, &SecurityDescriptorTmp, &Size)) {
+//          LocalFree(pStringBuffer);
+//          return STATUS_NOT_IMPLEMENTED;
+//        }
+//        LocalFree(pStringBuffer);
+
+//        *LengthNeeded = Size;
+//        if (Size > BufferLength) {
+//          LocalFree(SecurityDescriptorTmp);
+//          return STATUS_BUFFER_OVERFLOW;
+//        }
+
+//        // 3 - Copy the new SecurityDescriptor to destination
+//        memcpy(SecurityDescriptor, SecurityDescriptorTmp, Size);
+//        LocalFree(SecurityDescriptorTmp);
+
+//        status = STATUS_SUCCESS;
+
+
+//        return MirrorGetFileSecurity(FileName,  SecurityInformation,   SecurityDescriptor,  BufferLength,  LengthNeeded,  DokanFileInfo);
+
+
+        ////        ULONG Size = 0;
+        //        DWORD dwLength = 0;
+
+
+        //        GetPrivateObjectSecurity(psd,*SecurityInformation,NULL,0,LengthNeeded);
+
+        //        if(*LengthNeeded>BufferLength){
+        //            return STATUS_BUFFER_OVERFLOW;
+        //        }
+
+
+        //        PSECURITY_DESCRIPTOR SecurityDescriptorTmp =  (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, BufferLength);
+
+
+        //        GetPrivateObjectSecurity(psd,*SecurityInformation,SecurityDescriptorTmp,BufferLength,&dwLength);
+
+        //        // 3 - Copy the new SecurityDescriptor to destination
+        //        memcpy(SecurityDescriptor, SecurityDescriptorTmp, dwLength);
+        //        LocalFree(SecurityDescriptorTmp);
+
+        //        status = STATUS_SUCCESS;
+
+        //        // Ensure the Security Descriptor Length is set
+        //        DWORD securityDescriptorLength = GetSecurityDescriptorLength(SecurityDescriptor);
+        //        DbgPrint(L"  GetUserObjectSecurity return true,  *LengthNeeded = " L"securityDescriptorLength \n");
+        //        *LengthNeeded = securityDescriptorLength;
+
+        //        //    CloseHandle(handle);
 
     return status;
     }
@@ -1572,55 +2026,123 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
     if(f){
         std::lock_guard<std::mutex> securityLock(f->_data_mutex);
 
-        // SetPrivateObjectSecurity - ObjectsSecurityDescriptor
-        // The memory for the security descriptor must be allocated from the process
-        // heap (GetProcessHeap) with the HeapAlloc function.
-        // https://devblogs.microsoft.com/oldnewthing/20170727-00/?p=96705
+//        // SetPrivateObjectSecurity - ObjectsSecurityDescriptor
+//        // The memory for the security descriptor must be allocated from the process
+//        // heap (GetProcessHeap) with the HeapAlloc function.
+//        // https://devblogs.microsoft.com/oldnewthing/20170727-00/?p=96705
 
 
-        if(f->security.descriptor_size==0){
-             f->security.SetDescriptor(SecurityDescriptor);
-             return STATUS_SUCCESS;
-        }
+//        if(f->security.descriptor_size==0){
+//             f->security.SetDescriptor(SecurityDescriptor);
+//             return STATUS_SUCCESS;
+//        }
 
-        HANDLE pHeap = GetProcessHeap();
-        DWORD descSize =  f->security.descriptor_size == 0 ? SecurityDescriptorLength : f->security.descriptor_size;
-        PSECURITY_DESCRIPTOR heapSecurityDescriptor = HeapAlloc(pHeap, 0, descSize);
-        if (!heapSecurityDescriptor)
-            return STATUS_INSUFFICIENT_RESOURCES;
+//        HANDLE pHeap = GetProcessHeap();
+//        DWORD descSize =  f->security.descriptor_size == 0 ? SecurityDescriptorLength : f->security.descriptor_size;
+//        PSECURITY_DESCRIPTOR heapSecurityDescriptor = HeapAlloc(pHeap, 0, descSize);
+//        if (!heapSecurityDescriptor)
+//            return STATUS_INSUFFICIENT_RESOURCES;
 
-        // Copy our current descriptor into heap memory
-        if(f->security.descriptor.get()!=nullptr)
-            memcpy(heapSecurityDescriptor, f->security.descriptor.get(), descSize);
+//        // Copy our current descriptor into heap memory
+//        if(f->security.descriptor.get()!=nullptr)
+//            memcpy(heapSecurityDescriptor, f->security.descriptor.get(), descSize);
 
-        static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
-                                                FILE_GENERIC_EXECUTE,
-                                                FILE_ALL_ACCESS};
+//        static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
+//                                                FILE_GENERIC_EXECUTE,
+//                                                FILE_ALL_ACCESS};
 
-        if (!SetPrivateObjectSecurity(*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)) {
-          HeapFree(pHeap, 0, heapSecurityDescriptor);
-          return DokanNtStatusFromWin32(GetLastError());
-        }
+//        if (!SetPrivateObjectSecurity(*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)) {
+//            std::cout << "SetPrivateObjectSecurity1 ERROR " << GetLastError() << std::endl;
+//            HeapFree(pHeap, 0, heapSecurityDescriptor);
+//            return DokanNtStatusFromWin32(GetLastError());
+//        }
 
-        f->security.SetDescriptor(heapSecurityDescriptor);
-        HeapFree(pHeap, 0, heapSecurityDescriptor);
+        //        f->security.SetDescriptor(heapSecurityDescriptor);
+        //        HeapFree(pHeap, 0, heapSecurityDescriptor);
 
-        return STATUS_SUCCESS;
+        //        return STATUS_SUCCESS;
+        PSECURITY_DESCRIPTOR psd=nullptr;
+        NTSTATUS status = filenodes->sProcessor->SetSecurity( FileName,  SecurityInformation,  SecurityDescriptor,  SecurityDescriptorLength,  DokanFileInfo,psd,f->security.descriptor.get());
+        f->security.SetDescriptor(psd);
+        LocalFree(psd);
+        return status;
 
     }else{
-//    if (!SetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor)) {
-//        int error = GetLastError();
-//        DbgPrint(L"  SetUserObjectSecurity error: %d\n", error);
 
-//        return STATUS_SUCCESS;
 
-////        return DokanNtStatusFromWin32(error);
-//    }
-        DOKAN_IO_SECURITY_CONTEXT SecurityContext;
-        SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
-        filenodes->m_mutex.lock();
-        filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, 0, &SecurityContext));
-        filenodes->m_mutex.unlock();
+        PSECURITY_DESCRIPTOR psd=nullptr;
+        NTSTATUS status = filenodes->sProcessor->SetSecurity( FileName,  SecurityInformation,  SecurityDescriptor,  SecurityDescriptorLength,  DokanFileInfo,psd);
+        f->security.SetDescriptor(psd);
+        LocalFree(psd);
+        return status;
+//        DOKAN_IO_SECURITY_CONTEXT SecurityContext;
+//        SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
+//        filenodes->m_mutex.lock();
+
+//        PSECURITY_DESCRIPTOR psd=nullptr;
+
+//        DWORD ret = generateDefaultSD(&psd)        ;
+
+//        if(ret != STATUS_SUCCESS){
+//            filenodes->m_mutex.unlock();
+//            return GetLastError();
+//        }
+
+//        auto _f = std::make_shared<filenode>(filename_str, DokanFileInfo->IsDirectory, 0, nullptr);
+//        _f->security.SetDescriptor(psd);
+
+//        filenodes->_filenodes->emplace(filename_str,_f);
+
+//        LocalFree(psd);
+
+//         filenodes->m_mutex.unlock();
+
+//        return MirrorSetFileSecurity( FileName,  SecurityInformation,  SecurityDescriptor,  SecurityDescriptorLength,  DokanFileInfo);
+
+
+
+
+//        static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
+//                                                FILE_GENERIC_EXECUTE,
+//                                                FILE_ALL_ACCESS};
+
+//        // Copy our current descriptor into heap memory
+////        memcpy(heapSecurityDescriptor, f->security.descriptor.get(),SecurityDescriptorLength);
+
+//        //READ dummy SecurityDescriptor before using set
+
+//        wchar_t path[MAX_PATH];
+//        GetModuleFileNameW(NULL,path,MAX_PATH);
+//        unsigned long  ln;
+
+////         PSECURITY_DESCRIPTOR SecurityDescriptorTmp;
+
+//        if (!GetFileSecurityW(path, *SecurityInformation, NULL, 0, &ln)) {
+//            std::cout << "GetFileSecurityW ERROR" << GetLastError();
+//           return GetLastError();
+//        }
+
+//        HANDLE pHeap = GetProcessHeap();
+//        PSECURITY_DESCRIPTOR heapSecurityDescriptor = HeapAlloc(pHeap, 0, ln);
+//        if (!heapSecurityDescriptor) return STATUS_INSUFFICIENT_RESOURCES;
+////        SecurityDescriptorTmp =  (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, ln);
+//        GetFileSecurityW(path, *SecurityInformation, heapSecurityDescriptor, ln, &ln);
+
+//        if (!SetPrivateObjectSecurity(*SecurityInformation, SecurityDescriptor, &heapSecurityDescriptor, &memfs_mapping, 0)) {
+//            std::cout << "SetPrivateObjectSecurity2 ERROR " << GetLastError() << std::endl;
+//            HeapFree(pHeap, 0, heapSecurityDescriptor);
+//            return DokanNtStatusFromWin32(GetLastError());
+//        }
+
+////        f->security.SetDescriptor(heapSecurityDescriptor);
+//        auto _f = std::make_shared<filenode>(filename_str, false, 0, nullptr);
+//        _f->security.SetDescriptor(heapSecurityDescriptor);
+////        filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, 0, &SecurityContext));
+//        filenodes->_filenodes->emplace(filename_str,_f);
+//        HeapFree(pHeap, 0, heapSecurityDescriptor);
+
+//        filenodes->m_mutex.unlock();
+
     }
     return STATUS_SUCCESS;
 }
@@ -1894,6 +2416,13 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         return EXIT_FAILURE;
     }
 
+//    RamDiskManager man("B:\\");
+//    auto f = man.createFile();
+//    auto f2 = man.createdirectory();
+
+//    man.deleteFile(f);
+////    man.deletedirectory(f2);
+
 
 
     g_DebugMode = FALSE;
@@ -2089,6 +2618,9 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 //    boost::archive::binary_iarchive ir(is, boost::archive::no_header);
 
 //    ir >> m_nodes->_filenodes;
+
+
+//    getCurrentSid();
 
     DokanInit();
     status = DokanMain(&dokanOptions, &dokanOperations);

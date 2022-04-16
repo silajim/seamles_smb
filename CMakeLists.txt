@@ -6,7 +6,7 @@ project(dokan_mirror C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake")
 set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost REQUIRED COMPONENTS serialization filesystem)
+find_package(Boost REQUIRED COMPONENTS thread serialization filesystem)
 
 ################################################################################
 # Set target arch type if empty. Visual studio solution generator provides it.
@@ -53,6 +53,10 @@ set(Sources
     "filenode.cpp"
     "filenode.h"
     "DbgPrint.h"
+    "ramdiskmanager.h"
+    "ramdiskmanager.cpp"
+    "filesecutiryprocessor.h"
+    "filesecutiryprocessor.cpp"
 )
 source_group("Sources" FILES ${Sources})
 
@@ -65,12 +69,14 @@ set(ALL_FILES
 ################################################################################
 add_executable(${PROJECT_NAME} ${ALL_FILES})
 
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\" /SUBSYSTEM:CONSOLE")
+
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/ )
 
 target_link_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib)
 # Link with other targets.
-target_link_libraries(${PROJECT_NAME} PRIVATE  dokan2 Boost::filesystem Boost::serialization)
+target_link_libraries(${PROJECT_NAME} PRIVATE  dokan2 Boost::thread Boost::filesystem Boost::serialization)
 
 
 #use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
