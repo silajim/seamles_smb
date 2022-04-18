@@ -45,6 +45,18 @@ THE SOFTWARE.
 #include <boost/serialization/serialization.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+
+typedef struct libfsntfs_security_descriptor_values libfsntfs_security_descriptor_values_t;
+struct libfsntfs_security_descriptor_values
+{
+    /* The data
+     */
+    uint8_t *data;
+
+    /* The data size
+     */
+    size_t data_size;
+} ;
 struct security_informations {
   std::unique_ptr<byte[]> descriptor = nullptr;
   unsigned long descriptor_size = 0;
@@ -53,6 +65,9 @@ struct security_informations {
 
   void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor) {
     if (!securitydescriptor) return;
+
+    SECURITY_DESCRIPTOR *cast = (SECURITY_DESCRIPTOR*)securitydescriptor;
+
     descriptor_size = GetSecurityDescriptorLength(securitydescriptor);
     descriptor = std::make_unique<byte[]>(descriptor_size);
     memcpy(descriptor.get(), securitydescriptor, descriptor_size);

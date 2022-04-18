@@ -25,6 +25,8 @@ NTSTATUS FileSecutiryProcessor::GetSecurity(LPCWSTR FileName, PSECURITY_INFORMAT
     }
 
     GetFileSecurityW(wtemp.c_str() , *SecurityInformation,NULL,0,LengthNeeded);
+
+
     if(*LengthNeeded>BufferLength){
         ramManager->deleteFile(tempath);
         return STATUS_BUFFER_OVERFLOW;
@@ -34,6 +36,7 @@ NTSTATUS FileSecutiryProcessor::GetSecurity(LPCWSTR FileName, PSECURITY_INFORMAT
         ramManager->deleteFile(tempath);
         return GetLastError();
     }
+    SECURITY_DESCRIPTOR *cast = (SECURITY_DESCRIPTOR*)SecurityDescriptor;
     ramManager->deleteFile(tempath);
     return STATUS_SUCCESS;
 

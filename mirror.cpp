@@ -599,7 +599,7 @@ static BOOL AddSeSecurityNamePrivilege() {
 static NTSTATUS DOKAN_CALLBACK
 MirrorCreateFile2(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, ACCESS_MASK DesiredAccess, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PDOKAN_FILE_INFO DokanFileInfo) {
     WCHAR filePath[DOKAN_MAX_PATH];
-    HANDLE handle;
+    HANDLE handle = INVALID_HANDLE_VALUE;
     DWORD fileAttr;
     NTSTATUS status = STATUS_SUCCESS;
     DWORD creationDisposition;
@@ -622,7 +622,7 @@ MirrorCreateFile2(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, 
 static NTSTATUS DOKAN_CALLBACK
 MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, ACCESS_MASK DesiredAccess, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PDOKAN_FILE_INFO DokanFileInfo) {
     WCHAR filePath[DOKAN_MAX_PATH];
-    HANDLE handle=NULL;
+    HANDLE handle=INVALID_HANDLE_VALUE;
     DWORD fileAttr;
     NTSTATUS status = STATUS_SUCCESS;
     DWORD creationDisposition;
@@ -838,7 +838,7 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     // declare a security descriptor
 
-    SECURITY_DESCRIPTOR SD;
+//    SECURITY_DESCRIPTOR SD;
     BOOL bSetOk;
 
     // initializes a new security descriptor. The InitializeSecurityDescriptor()
@@ -849,29 +849,29 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     // and all control flags set to FALSE (NULL). Thus, except for its revision level, it is empty.
 
-    BOOL bInitOk = InitializeSecurityDescriptor(&SD, SECURITY_DESCRIPTOR_REVISION);
+//    BOOL bInitOk = InitializeSecurityDescriptor(&SD, SECURITY_DESCRIPTOR_REVISION);
 
-    if(bInitOk)
+//    if(bInitOk)
 
-    {
+//    {
 
-        //                      wprintf(LInitializeSecurityDescriptor() is OK\n);
+//        //                      wprintf(LInitializeSecurityDescriptor() is OK\n);
 
-        // sets information in a discretionary access control list (DACL).
+//        // sets information in a discretionary access control list (DACL).
 
-        // If a DACL is already present in the security descriptor, the DACL is replaced.
+//        // If a DACL is already present in the security descriptor, the DACL is replaced.
 
-        // give the security descriptor a Null Dacl
+//        // give the security descriptor a Null Dacl
 
-        // done using the  TRUE, (PACL)NULL here
+//        // done using the  TRUE, (PACL)NULL here
 
-        bSetOk = SetSecurityDescriptorDacl(&SD, TRUE,(PACL)NULL, FALSE);
+//        bSetOk = SetSecurityDescriptorDacl(&SD, TRUE,(PACL)NULL, FALSE);
 
-        if(bSetOk){
-            SecurityContext->AccessState.SecurityDescriptor = &SD;
-            securityAttrib.lpSecurityDescriptor=&SD;
-        }
-    }
+//        if(bSetOk){
+//            SecurityContext->AccessState.SecurityDescriptor = &SD;
+//            securityAttrib.lpSecurityDescriptor=&SD;
+//        }
+//    }
 
     if (DokanFileInfo->IsDirectory) {
         // It is a create directory request
@@ -1035,6 +1035,7 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
         }
     }
 
+    DbgPrint(L"OPEN HANDLE  %d" , (uint64_t)handle);
     DbgPrint(L"\n");
     return status;
 }
@@ -1046,13 +1047,18 @@ static void DOKAN_CALLBACK MirrorCloseFile(LPCWSTR FileName,  PDOKAN_FILE_INFO D
     WCHAR filePath[DOKAN_MAX_PATH];
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
 
-    if(DokanFileInfo->Context!=NULL && reinterpret_cast<HANDLE>(DokanFileInfo->Context) != INVALID_HANDLE_VALUE){
+    if((DokanFileInfo->Context!=NULL) && (reinterpret_cast<HANDLE>(DokanFileInfo->Context) != INVALID_HANDLE_VALUE)){
         DWORD flags;
         if(GetHandleInformation(reinterpret_cast<HANDLE>(DokanFileInfo->Context),&flags)!=0){
             if (DokanFileInfo->Context) {
                 DbgPrint(L"CloseFile: %s\n", filePath);
-                DbgPrint(L"\terror : not cleanuped file\n\n");
-                CloseHandle((HANDLE)DokanFileInfo->Context);
+                DbgPrint(L"CLODE HANDLE  %d" , DokanFileInfo->Context);
+//                DbgPrint(L"\terror : not cleanuped file\n\n");
+                try{
+                    CloseHandle((HANDLE)DokanFileInfo->Context);
+                }catch(...){
+
+                }
                 DokanFileInfo->Context = reinterpret_cast<ULONG64>(INVALID_HANDLE_VALUE);
             } else {
                 DbgPrint(L"Close: %s\n\n", filePath);
@@ -1073,6 +1079,7 @@ static void DOKAN_CALLBACK MirrorCleanup(LPCWSTR FileName,PDOKAN_FILE_INFO Dokan
 
     if (DokanFileInfo->Context) {
         DbgPrint(L"Cleanup: %s\n\n", filePath);
+        DbgPrint(L"CLOSE HANDLE  %d" , DokanFileInfo->Context);
         CloseHandle((HANDLE)(DokanFileInfo->Context));
         DokanFileInfo->Context = 0;
     } else {
@@ -1290,6 +1297,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileInformation( LPCWSTR FileName, LPBY_
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
 
     DbgPrint(L"GetFileInfo : %s\n", filePath);
+    DbgPrint(L"GetFileInfo HANDLE : %d\n", DokanFileInfo->Context);
 
     if (!handle || handle == INVALID_HANDLE_VALUE) {
         DbgPrint(L"\tinvalid handle, cleanuped?\n");
@@ -1344,20 +1352,20 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileInformation( LPCWSTR FileName, LPBY_
             DbgPrint(L"\tFindFiles OK, file size = %d\n", find.nFileSizeLow);
             FindClose(findHandle);
         }
-    } else {
-        auto filename_str = std::wstring(FileName);
-    //    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
-        filenodes->m_mutex.lock();
-        auto fit = filenodes->_filenodes->find(filename_str);
-        std::shared_ptr<filenode> f;
-        f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
-        filenodes->m_mutex.unlock();
-
-        if(f)
-            HandleFileInformation->dwFileAttributes = f->attributes;
-
-        DbgPrint(L"\tGetFileInformationByHandle success, file size = %d\n", HandleFileInformation->nFileSizeLow);
     }
+    auto filename_str = std::wstring(FileName);
+    //    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+    filenodes->m_mutex.lock();
+    auto fit = filenodes->_filenodes->find(filename_str);
+    std::shared_ptr<filenode> f;
+    f=  (fit != filenodes->_filenodes->end()) ? fit->second : nullptr;
+    filenodes->m_mutex.unlock();
+
+    if(f)
+        HandleFileInformation->dwFileAttributes = f->attributes;
+
+    DbgPrint(L"\tGetFileInformationByHandle success, file size = %d\n", HandleFileInformation->nFileSizeLow);
+
 
     DbgPrint(L"FILE ATTRIBUTE  = %d\n", HandleFileInformation->dwFileAttributes);
     DbgPrint(L"\tFileAttributes = 0x%x\n", HandleFileInformation->dwFileAttributes);
@@ -1701,7 +1709,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileAttributes(LPCWSTR FileName, DWORD F
 
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
 
-    DbgPrint(L"SetFileAttributes %s 0x%x\n", filePath, FileAttributes);
+    DbgPrint(L"SetFileAttributes %s 0x%x\n", FileName, FileAttributes);
 
     if (FileAttributes != 0) {
 //        if (!SetFileAttributes(filePath, FileAttributes)) {
@@ -1722,7 +1730,7 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileAttributes(LPCWSTR FileName, DWORD F
             return STATUS_SUCCESS;
         }else{
             filenodes->m_mutex.lock();
-            filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, FileAttributes, nullptr));
+            filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, DokanFileInfo->IsDirectory, FileAttributes, nullptr));
             filenodes->m_mutex.unlock();
              return STATUS_SUCCESS;
         }
@@ -2072,7 +2080,9 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
 
         PSECURITY_DESCRIPTOR psd=nullptr;
         NTSTATUS status = filenodes->sProcessor->SetSecurity( FileName,  SecurityInformation,  SecurityDescriptor,  SecurityDescriptorLength,  DokanFileInfo,psd);
-        f->security.SetDescriptor(psd);
+        auto _f = std::make_shared<filenode>(filename_str, DokanFileInfo->IsDirectory, 0, nullptr);
+        _f->security.SetDescriptor(psd);
+        filenodes->_filenodes->emplace(filename_str,_f);
         LocalFree(psd);
         return status;
 //        DOKAN_IO_SECURITY_CONTEXT SecurityContext;
