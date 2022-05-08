@@ -45,6 +45,7 @@ http://dokan-dev.github.io
 #include <handleapi.h>
 #include <processthreadsapi.h>
 #include <Psapi.h>
+#include <Mq.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/serialization/map.hpp>
@@ -56,6 +57,10 @@ http://dokan-dev.github.io
 
 #include <ostream>
 #include <algorithm>
+
+#include "securityprocessor.h"
+#include "WinSec.h"
+
 
 // Enable Long Paths on Windows 10 version 1607 and later by changing
 // the OS configuration (see Microsoft own documentation for the steps)
@@ -156,6 +161,109 @@ static void GetFilePath(PWCHAR filePath, ULONG numberOfElements, LPCWSTR FileNam
     } else {
         wcsncat_s(filePath, numberOfElements, FileName, wcslen(FileName));
     }
+}
+static ULONG BOOL_TO_ERROR(BOOL f)
+{
+    return f ? 0 : GetLastError();
+}
+
+static ULONG GetNotElevatedSIDS(PSID *owner, PSID *group)
+{
+    HANDLE hToken;
+    ULONG err = BOOL_TO_ERROR(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken));
+
+    if (!err)
+    {
+    ULONG cb;
+        union {
+            TOKEN_LINKED_TOKEN tlt;
+            TOKEN_ELEVATION_TYPE tet;
+        };
+
+        err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenElevationType, &tet, sizeof(tet), &cb));
+
+        if (!err)
+        {
+            if (tet == TokenElevationTypeFull)
+            {
+                err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenLinkedToken, &tlt, sizeof(tlt), &cb));
+            }
+            else
+            {
+                err = ERROR_ELEVATION_REQUIRED;
+            }
+        }
+        CloseHandle(hToken);
+
+        if (!err)
+        {
+            union {
+                PTOKEN_DEFAULT_DACL p;
+                PVOID buf;
+            };
+
+//            cb = 0x100;
+
+//            do
+//            {
+//                if (buf = LocalAlloc(0, cb))
+//                {
+//                    if (err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenDefaultDacl, buf, cb, &cb)))
+//                    {
+//                        LocalFree(buf);
+//                    }
+//                    else
+//                    {
+//                        *DefaultDacl = p;
+//                    }
+//                }
+//                else
+//                {
+//                    err = GetLastError();
+//                    break;
+//                }
+
+//            } while (err == ERROR_INSUFFICIENT_BUFFER);
+
+            DWORD needsize;
+            GetTokenInformation(tlt.LinkedToken, TokenOwner, NULL, 0 , &needsize);
+            *owner = (PSID)LocalAlloc(LPTR , needsize);
+
+
+            err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenOwner, owner, needsize , &needsize));
+            if(GetLengthSid(owner) < needsize){
+                DbgPrint(L"GetNotElevatedDefaultDacl owner small \n");
+            }
+
+            LPWSTR ssid=NULL;
+            ConvertSidToStringSid(*owner,&ssid);
+
+            DbgPrint(L"owner sid %s\n", ssid);
+
+            needsize = 0;
+            GetTokenInformation(tlt.LinkedToken, TokenGroups, NULL, 0 , &needsize);
+
+            *group = (PSID)LocalAlloc(LPTR , needsize);
+
+            err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenPrimaryGroup, group, needsize , &needsize));
+            if(GetLengthSid(group) < needsize){
+                 DbgPrint(L"GetNotElevatedDefaultDacl group small \n");
+            }
+            LocalFree(ssid);
+
+            LPWSTR ssid2=NULL;
+
+            ConvertSidToStringSid(*group,&ssid2);
+
+            DbgPrint(L"group sid %s\n", ssid2);
+
+            LocalFree(ssid2);
+
+            CloseHandle(tlt.LinkedToken);
+        }
+    }
+
+    return err;
 }
 
 static void PrintUserName(PDOKAN_FILE_INFO DokanFileInfo) {
@@ -310,13 +418,20 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     DbgPrint(L"CreateFile : %s \n", filePath,FileName);
 
-    if(filename_str==LR"(\***REMOVED***)"){
-        if(!(fileAttributesAndFlags & FILE_ATTRIBUTE_DIRECTORY) ){
-            fileAttributesAndFlags |= FILE_ATTRIBUTE_DIRECTORY;
-            DokanFileInfo->IsDirectory = TRUE;
-
-        }
+    // Windows will automatically try to create and access different system
+    // directories.
+    if (filename_str == L"\\System Volume Information" ||
+        filename_str == L"\\$RECYCLE.BIN") {
+        return STATUS_NO_SUCH_FILE;
     }
+
+//    if(filename_str==LR"(\***REMOVED***)"){
+//        if(!(fileAttributesAndFlags & FILE_ATTRIBUTE_DIRECTORY) ){
+//            fileAttributesAndFlags |= FILE_ATTRIBUTE_DIRECTORY;
+//            DokanFileInfo->IsDirectory = TRUE;
+
+//        }
+//    }
 
 
     PrintUserName(DokanFileInfo);
@@ -454,29 +569,29 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     // and all control flags set to FALSE (NULL). Thus, except for its revision level, it is empty.
 
-    BOOL bInitOk = InitializeSecurityDescriptor(&SD, SECURITY_DESCRIPTOR_REVISION);
+//    BOOL bInitOk = InitializeSecurityDescriptor(&SD, SECURITY_DESCRIPTOR_REVISION);
 
-    if(bInitOk)
+//    if(bInitOk)
 
-    {
+//    {
 
-        //                      wprintf(LInitializeSecurityDescriptor() is OK\n);
+//        //                      wprintf(LInitializeSecurityDescriptor() is OK\n);
 
-        // sets information in a discretionary access control list (DACL).
+//        // sets information in a discretionary access control list (DACL).
 
-        // If a DACL is already present in the security descriptor, the DACL is replaced.
+//        // If a DACL is already present in the security descriptor, the DACL is replaced.
 
-        // give the security descriptor a Null Dacl
+//        // give the security descriptor a Null Dacl
 
-        // done using the  TRUE, (PACL)NULL here
+//        // done using the  TRUE, (PACL)NULL here
 
-        bSetOk = SetSecurityDescriptorDacl(&SD, TRUE,(PACL)NULL, FALSE);
+//        bSetOk = SetSecurityDescriptorDacl(&SD, TRUE,(PACL)NULL, FALSE);
 
-//        if(bSetOk){
-//            SecurityContext->AccessState.SecurityDescriptor = &SD;
-//            securityAttrib.lpSecurityDescriptor=&SD;
-//        }
-    }
+////        if(bSetOk){
+////            SecurityContext->AccessState.SecurityDescriptor = &SD;
+////            securityAttrib.lpSecurityDescriptor=&SD;
+////        }
+//    }
 
     if (DokanFileInfo->IsDirectory) {
         // It is a create directory request
@@ -494,7 +609,7 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
             if(creationDisposition == CREATE_NEW || creationDisposition == CREATE_ALWAYS){
                 std::lock_guard<std::mutex> lk(filenodes->m_mutex);
 //                filenodes->m_mutex.lock()
-                filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, true, FILE_ATTRIBUTE_DIRECTORY, SecurityContext));
+                filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, true, FileAttributes, SecurityContext));
                 SecurityContext->AccessState.SecurityDescriptor = NULL;
                 securityAttrib.lpSecurityDescriptor = NULL;
 
@@ -536,10 +651,10 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
                 }
             }
 
-            if(bSetOk){
-                SecurityContext->AccessState.SecurityDescriptor = &SD;
-                securityAttrib.lpSecurityDescriptor=&SD;
-            }
+//            if(bSetOk){
+//                SecurityContext->AccessState.SecurityDescriptor = &SD;
+//                securityAttrib.lpSecurityDescriptor=&SD;
+//            }
 
             // FILE_FLAG_BACKUP_SEMANTICS is required for opening directory handles
             handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, OPEN_EXISTING, fileAttributesAndFlags | FILE_FLAG_BACKUP_SEMANTICS, NULL);
@@ -593,10 +708,10 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
 
 
-        if(bSetOk){
-            SecurityContext->AccessState.SecurityDescriptor = &SD;
-            securityAttrib.lpSecurityDescriptor=&SD;
-        }
+//        if(bSetOk){
+//            SecurityContext->AccessState.SecurityDescriptor = &SD;
+//            securityAttrib.lpSecurityDescriptor=&SD;
+//        }
 
         handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, creationDisposition, fileAttributesAndFlags, NULL);
         if (g_ImpersonateCallerUser && userTokenHandle != INVALID_HANDLE_VALUE) {
@@ -1382,34 +1497,62 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
     DWORD status = STATUS_SUCCESS;
 
     if(f){
-        // We have a Security Descriptor but we need to extract only informations
-        // requested 1 - Convert the Security Descriptor to SDDL string with the
-        // informations requested
+//         We have a Security Descriptor but we need to extract only informations
+//         requested 1 - Convert the Security Descriptor to SDDL string with the
+//         informations requested
         LPTSTR pStringBuffer = NULL;
-        if (!ConvertSecurityDescriptorToStringSecurityDescriptor(f->security.descriptor.get(), SDDL_REVISION_1, *SecurityInformation, &pStringBuffer, NULL)) {
-          return STATUS_NOT_IMPLEMENTED;
-        }
 
-        // 2 - Convert the SDDL string back to Security Descriptor
-        PSECURITY_DESCRIPTOR SecurityDescriptorTmp = NULL;
-        ULONG Size = 0;
-        if (!ConvertStringSecurityDescriptorToSecurityDescriptor(pStringBuffer, SDDL_REVISION_1, &SecurityDescriptorTmp, &Size)) {
-          LocalFree(pStringBuffer);
-          return STATUS_NOT_IMPLEMENTED;
-        }
-        LocalFree(pStringBuffer);
+
+         PSECURITY_DESCRIPTOR heapSecurityDescriptor = nullptr;
+//         SecurityProcessor sp;
+//         sp.generateDescriptor(heapSecurityDescriptor,f->security.strdescriptor);
+
+         heapSecurityDescriptor = HeapAlloc(GetProcessHeap(),0,f->security.descriptor_size);
+         memcpy(heapSecurityDescriptor,f->security.descriptor.get(),f->security.descriptor_size);
+
+         BOOL valid = IsValidSecurityDescriptor(heapSecurityDescriptor);
+         DbgPrint(L"VAlid lcsd, %d \n", valid);
+
+
+//        if (!ConvertSecurityDescriptorToStringSecurityDescriptor(f->security.descriptor.get(), SDDL_REVISION_1, *SecurityInformation, &pStringBuffer, NULL)) {
+//          return STATUS_NOT_IMPLEMENTED;
+//        }
+
+//        // 2 - Convert the SDDL string back to Security Descriptor
+//        PSECURITY_DESCRIPTOR SecurityDescriptorTmp = NULL;
+//        ULONG Size = 0;
+//        if (!ConvertStringSecurityDescriptorToSecurityDescriptor(pStringBuffer, SDDL_REVISION_1, &SecurityDescriptorTmp, &Size)) {
+//          LocalFree(pStringBuffer);
+//          return STATUS_NOT_IMPLEMENTED;
+//        }
+//        LocalFree(pStringBuffer);
+
+//         PSECURITY_DESCRIPTOR SecurityDescriptorTmp = NULL;
+         ULONG Size = 0;
+
+         if(!GetPrivateObjectSecurity(heapSecurityDescriptor,*SecurityInformation,heapSecurityDescriptor,f->security.descriptor_size,&Size)){
+             DbgPrint(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+             return GetLastError();
+         }
+
+//         SecurityDescriptorTmp = LocalAlloc(LPTR, Size);
+
+//         GetPrivateObjectSecurity(heapSecurityDescriptor,*SecurityInformation,SecurityDescriptorTmp,Size,&Size);
 
         *LengthNeeded = Size;
         if (Size > BufferLength) {
-          LocalFree(SecurityDescriptorTmp);
+//          LocalFree(SecurityDescriptorTmp);
+            HeapFree(GetProcessHeap(),0,heapSecurityDescriptor);
           return STATUS_BUFFER_OVERFLOW;
         }
 
         // 3 - Copy the new SecurityDescriptor to destination
-        memcpy(SecurityDescriptor, SecurityDescriptorTmp, Size);
-        LocalFree(SecurityDescriptorTmp);
+        memcpy(SecurityDescriptor, heapSecurityDescriptor, Size);
+//        LocalFree(SecurityDescriptorTmp);
+         HeapFree(GetProcessHeap(),0,heapSecurityDescriptor);
 
-        status = STATUS_SUCCESS;
+
+       status = STATUS_SUCCESS;
 
     }else{
 
@@ -1443,7 +1586,6 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
     WCHAR filePath[DOKAN_MAX_PATH];
      auto filenodes = GET_FS_INSTANCE;
 
-//    UNREFERENCED_PARAMETER(SecurityDescriptorLength);
 
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
 
@@ -1454,6 +1596,30 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
         DbgPrint(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
+
+    MirrorCheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, DACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, SACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, LABEL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, ATTRIBUTE_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, SCOPE_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, PROCESS_TRUST_LABEL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, ACCESS_FILTER_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, BACKUP_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, PROTECTED_DACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, PROTECTED_SACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_DACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_SACL_SECURITY_INFORMATION);
+
+    SECURITY_DESCRIPTOR_RELATIVE *cast = (SECURITY_DESCRIPTOR_RELATIVE*)SecurityDescriptor;
+    SECURITY_DESCRIPTOR *cast2 = (SECURITY_DESCRIPTOR*)SecurityDescriptor;
+
+//    if(*SecurityInformation & DACL_SECURITY_INFORMATION){
+//        PACL acl=NULL;
+//        SecurityProcessor sp;
+//        sp.getAllData(SecurityDescriptor);
+//    }
 
     auto filename_str = std::wstring(FileName);
 //    std::lock_guard<std::mutex> lk(filenodes->m_mutex);
@@ -1484,14 +1650,24 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
             return STATUS_INSUFFICIENT_RESOURCES;
 
         // Copy our current descriptor into heap memory
-        if(f->security.descriptor.get()!=nullptr)
-            memcpy(heapSecurityDescriptor, f->security.descriptor.get(), descSize);
+        if(f->security.descriptor_size!=0){
+//            SecurityProcessor sp;
+//            sp.generateDescriptor(heapSecurityDescriptor,f->security.strdescriptor);
+            heapSecurityDescriptor = HeapAlloc(GetProcessHeap(),0,f->security.descriptor_size);
+            memcpy(heapSecurityDescriptor,f->security.descriptor.get(),f->security.descriptor_size);
+        }else{
+            heapSecurityDescriptor = HeapAlloc(pHeap, 0, descSize);
+            InitializeSecurityDescriptor(heapSecurityDescriptor,SECURITY_DESCRIPTOR_REVISION);
+        }
 
         static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
                                                 FILE_GENERIC_EXECUTE,
                                                 FILE_ALL_ACCESS};
 
-        if (!SetPrivateObjectSecurity(*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)) {
+        NTSTATUS stat;
+
+        stat = RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, 0 ,&memfs_mapping, 0);
+        if(stat != ERROR_SUCCESS){
           HeapFree(pHeap, 0, heapSecurityDescriptor);
           return DokanNtStatusFromWin32(GetLastError());
         }
@@ -1501,18 +1677,146 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
 
         return STATUS_SUCCESS;
 
-    }else
-    if (!SetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor)) {
-        int error = GetLastError();        
-        DbgPrint(L"  SetUserObjectSecurity error: %d\n", error);
+    }else{
+//    if (!SetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor)) {
+//        int error = GetLastError();
+//        DbgPrint(L"  SetUserObjectSecurity error: %d\n", error);
 
-        DOKAN_IO_SECURITY_CONTEXT SecurityContext;
-        SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
+//        DOKAN_IO_SECURITY_CONTEXT SecurityContext;
+//        SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
+
+
+        PSID owner=NULL, group=NULL;
+        ULONG err =  GetNotElevatedSIDS(&owner, &group);
+        DbgPrint(L"Get sids, %d \n",err);
+
+        BOOL valid = IsValidSid(owner);
+        DbgPrint(L"Owner sid valid %d \n",valid);
+
+        valid = IsValidSid(group);
+        DbgPrint(L"Group sid valid %d \n",valid);
+
+        TRUSTEEW towner,tgroup;
+        BuildTrusteeWithSidW (&towner,owner);
+        BuildTrusteeWithSidW(&tgroup,group);
+
+//        LocalFree(owner);
+//        LocalFree(group);
+
+        ULONG sdsize;
+        PSECURITY_DESCRIPTOR lcsd=nullptr;;
+        DWORD error =  BuildSecurityDescriptorW(&towner,&tgroup,0,NULL,0,NULL,NULL,&sdsize,&lcsd);
+        if(error != ERROR_SUCCESS){
+            DbgPrint(L"ERROR BuildSecurityDescriptorW, %d\n",error);
+        }
+
+        valid = IsValidSecurityDescriptor(lcsd);
+        DbgPrint(L"VAlid lcsd, %d \n", valid);
+
+        HANDLE pHeap = GetProcessHeap();
+        PSECURITY_DESCRIPTOR heapSecurityDescriptor = HeapAlloc(pHeap, 0, sdsize);
+        memcpy(heapSecurityDescriptor , lcsd , sdsize);
+
+        valid = IsValidSecurityDescriptor(heapSecurityDescriptor);
+        DbgPrint(L"VAlid heapSecurityDescriptor, %d \n", valid);
+
+        LocalFree(lcsd);
+
+        valid = IsValidSecurityDescriptor(heapSecurityDescriptor);
+        DbgPrint(L"VAlid 2 heapSecurityDescriptor, %d \n", valid);
+
+//        BuildSecurityDescriptorW(NULL,NULL,0,NULL,)
+//        memset(heapSecurityDescriptor,0,SECURITY_DESCRIPTOR_MIN_LENGTH);
+//        SetSecurityDescriptorControl(heapSecurityDescriptor,SE_SELF_RELATIVE,SE_SELF_RELATIVE);
+//        InitializeSecurityDescriptor(heapSecurityDescriptor,SECURITY_DESCRIPTOR_REVISION);
+//        SecurityProcessor sp;
+//        sp.
+
+
+
+        static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
+                                                FILE_GENERIC_EXECUTE,
+                                                FILE_ALL_ACCESS};
+        LPWSTR ssid=NULL;
+        PSID owner2 = NULL;
+        BOOL ownerDefaulted;
+        GetSecurityDescriptorOwner(SecurityDescriptor,&owner2,&ownerDefaulted);
+        if(owner2==NULL){
+            DbgPrint(L"owner2 NULL");
+        }else{
+            valid = IsValidSid(owner2);
+            DbgPrint(L"Owner2 sid valid %d \n",valid);
+            ConvertSidToStringSid(owner2,&ssid);
+            DbgPrint(L"owner2 sid %s\n", ssid);
+            LocalFree(ssid);
+        }
+
+        owner2 = NULL;
+        ownerDefaulted = FALSE;
+        GetSecurityDescriptorOwner(heapSecurityDescriptor,&owner2,&ownerDefaulted);
+        if(owner2==NULL){
+            DbgPrint(L"owner22 NULL");
+        }else{
+            valid = IsValidSid(owner2);
+            DbgPrint(L"Owner22 sid valid %d \n",valid);
+            ConvertSidToStringSid(owner2,&ssid);
+            DbgPrint(L"owner22 sid %s\n", ssid);
+        }
+
+        SECURITY_DESCRIPTOR_CONTROL sdc;
+        DWORD sdc_version;
+        GetSecurityDescriptorControl(SecurityDescriptor,&sdc,&sdc_version);
+
+        if(sdc & SE_SELF_RELATIVE){
+            DbgPrint(L"SecurityDescriptor self relative \n");
+        }else{
+            DbgPrint(L"SecurityDescriptor absolute \n");
+        }
+
+        GetSecurityDescriptorControl(heapSecurityDescriptor,&sdc,&sdc_version);
+
+        if(sdc & SE_SELF_RELATIVE){
+            DbgPrint(L"SecurityDescriptor self relative \n");
+        }else{
+            DbgPrint(L"SecurityDescriptor absolute \n");
+        }
+
+
+//        if(SetPrivateObjectSecurity(*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)==0) {
+//             DbgPrint(L"  SetUserObjectSecurity2 error: %d\n", GetLastError());
+//          HeapFree(pHeap, 0, heapSecurityDescriptor);
+//          return DokanNtStatusFromWin32(GetLastError());
+//        }
+        NTSTATUS stat;
+         stat = RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor,0, &memfs_mapping, 0);
+         if(stat!=ERROR_SUCCESS){
+             DbgPrint(L"  SetUserObjectSecurity2 error: %d\n", stat);
+          HeapFree(pHeap, 0, heapSecurityDescriptor);
+          return DokanNtStatusFromWin32(GetLastError());
+        }
+
+
+         GetSecurityDescriptorOwner(heapSecurityDescriptor,&owner2,&ownerDefaulted);
+         if(owner2==NULL){
+             DbgPrint(L"after owner22 NULL");
+         }else{
+             valid = IsValidSid(owner2);
+             DbgPrint(L"after Owner22 sid valid %d \n",valid);
+             ConvertSidToStringSid(owner2,&ssid);
+             DbgPrint(L"after owner22 sid %s\n", ssid);
+         }
+
+
         filenodes->m_mutex.lock();
-        filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, 0, &SecurityContext));
-        filenodes->m_mutex.unlock();
 
-        return STATUS_SUCCESS;
+        auto fil = std::make_shared<filenode>(filename_str, false, 0, nullptr);
+        fil->security.SetDescriptor(SecurityDescriptor);
+        filenodes->_filenodes->emplace(filename_str,fil);
+
+        filenodes->m_mutex.unlock();
+        HeapFree(pHeap, 0, heapSecurityDescriptor);
+
+//        return STATUS_SUCCESS;
 
 //        return DokanNtStatusFromWin32(error);
     }

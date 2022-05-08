@@ -45,8 +45,15 @@ THE SOFTWARE.
 #include <boost/serialization/serialization.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+
+
+#include "securityprocessor.h"
+
 struct security_informations {
+    std::wstring strdescriptor;
   std::unique_ptr<byte[]> descriptor = nullptr;
+//  std::unique_ptr<PACL> dacl = nullptr;
+
   unsigned long descriptor_size = 0;
 
   security_informations() = default;
@@ -56,27 +63,29 @@ struct security_informations {
     descriptor_size = GetSecurityDescriptorLength(securitydescriptor);
     descriptor = std::make_unique<byte[]>(descriptor_size);
     memcpy(descriptor.get(), securitydescriptor, descriptor_size);
+//    SecurityProcessor sp;
+//    sp.getAllData(securitydescriptor,strdescriptor);
   }
 
 private:
-  friend class boost::serialization::access;
-     template <class Archive>
-        void save(Archive& ar, unsigned int version) const {
-         ar &descriptor_size;
-         for(unsigned int i=0;i<descriptor_size;i++){
-             ar &descriptor[i];
-         }
-     }
+//  friend class boost::serialization::access;
+//     template <class Archive>
+//        void save(Archive& ar, unsigned int version) const {
+//         ar &descriptor_size;
+//         for(unsigned int i=0;i<descriptor_size;i++){
+//             ar &descriptor[i];
+//         }
+//     }
 
-    template <class Archive>
-        void load(Archive& ar, unsigned int version) {
-            ar &descriptor_size;
-            descriptor = std::make_unique<byte[]>(descriptor_size);
-            for(unsigned int i=0;i<descriptor_size;i++){
-                ar &descriptor[i];
-            }
-        }
-        BOOST_SERIALIZATION_SPLIT_MEMBER()
+//    template <class Archive>
+//        void load(Archive& ar, unsigned int version) {
+//            ar &descriptor_size;
+//            descriptor = std::make_unique<byte[]>(descriptor_size);
+//            for(unsigned int i=0;i<descriptor_size;i++){
+//                ar &descriptor[i];
+//            }
+//        }
+//        BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 //struct filetimes {

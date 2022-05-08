@@ -8,6 +8,8 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake")
 set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost REQUIRED COMPONENTS serialization filesystem)
 
+#add_subdirectory(rtl)
+
 ################################################################################
 # Set target arch type if empty. Visual studio solution generator provides it.
 ################################################################################
@@ -53,6 +55,11 @@ set(Sources
     "filenode.cpp"
     "filenode.h"
     "DbgPrint.h"
+    "DbgPrint.cpp"
+    "WinSec.cpp"
+    "WinSec.h"
+    "securityprocessor.h"
+    "securityprocessor.cpp"
 )
 source_group("Sources" FILES ${Sources})
 
