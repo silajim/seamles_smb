@@ -54,6 +54,8 @@ set(Sources
     "mirror.cpp"
     "filenode.cpp"
     "filenode.h"
+    "filesecurity.h"
+    "filesecurity.cpp"
     "DbgPrint.h"
     "DbgPrint.cpp"
     "WinSec.cpp"

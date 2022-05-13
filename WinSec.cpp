@@ -2,7 +2,9 @@
 //#include <AclAPI.h>
 
 #include "WinSec.h"
-
+#include <sddl.h>
+#include <AccCtrl.h>
+#include <AclAPI.h>
 #define ROUND_DOWN(n, align) (((ULONG)n) & ~((align) - 1l))
 #define ROUND_UP(n, align) ROUND_DOWN(((ULONG)n) + (align) - 1, (align))
 
@@ -199,4 +201,291 @@ NTSTATUS RtlpSetSecurityObject(_In_opt_ PVOID Object,
     }
 
     return Status;
+}
+
+
+ULONG BOOL_TO_ERROR(BOOL f)
+{
+    return f ? 0 : GetLastError();
+}
+
+ULONG GetNotElevatedDefaultDacl(PACL* DefaultDacl)
+{
+    HANDLE hToken;
+    ULONG err = BOOL_TO_ERROR(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken));
+
+    if (!err)
+    {
+    ULONG cb;
+        union {
+            TOKEN_LINKED_TOKEN tlt;
+            TOKEN_ELEVATION_TYPE tet;
+        };
+
+        err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenElevationType, &tet, sizeof(tet), &cb));
+
+        if (!err)
+        {
+            if (tet == TokenElevationTypeFull)
+            {
+                err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenLinkedToken, &tlt, sizeof(tlt), &cb));
+            }
+            else
+            {
+                err = ERROR_ELEVATION_REQUIRED;
+            }
+        }
+        CloseHandle(hToken);
+
+        if (!err)
+        {
+            PTOKEN_DEFAULT_DACL p;
+            DWORD needsize;
+
+            GetTokenInformation(tlt.LinkedToken, TokenDefaultDacl, NULL, 0, &needsize);
+
+            p = (PTOKEN_DEFAULT_DACL) LocalAlloc(LPTR,needsize);
+
+            if(!GetTokenInformation(tlt.LinkedToken, TokenDefaultDacl, p, needsize, &needsize)){
+                DbgPrint(L"Get Token information Error %d\n",GetLastError());
+                return GetLastError();
+            }
+
+            *DefaultDacl = (PACL)LocalAlloc(LPTR,p->DefaultDacl->AclSize);
+            memcpy(*DefaultDacl,p->DefaultDacl,p->DefaultDacl->AclSize);
+
+            DbgPrint(L"Is DACL valid  %d\n" ,IsValidAcl(*DefaultDacl));
+
+            LocalFree(p);
+
+            CloseHandle(tlt.LinkedToken);
+        }
+    }
+
+    return err;
+}
+
+ULONG GetNotElevatedSIDS(PSID *owner, PSID *group)
+{
+    HANDLE hToken;
+    ULONG err = BOOL_TO_ERROR(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken));
+
+    if (!err)
+    {
+    ULONG cb;
+        union {
+            TOKEN_LINKED_TOKEN tlt;
+            TOKEN_ELEVATION_TYPE tet;
+        };
+
+        err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenElevationType, &tet, sizeof(tet), &cb));
+
+        if (!err)
+        {
+            if (tet == TokenElevationTypeFull)
+            {
+                err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenLinkedToken, &tlt, sizeof(tlt), &cb));
+            }
+            else
+            {
+                err = ERROR_ELEVATION_REQUIRED;
+            }
+        }
+        CloseHandle(hToken);
+
+        if (!err)
+        {
+//            union {
+//                PTOKEN_DEFAULT_DACL p;
+//                PVOID buf;
+//            };
+
+//            cb = 0x100;
+
+//            do
+//            {
+//                if (buf = LocalAlloc(0, cb))
+//                {
+//                    if (err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenDefaultDacl, buf, cb, &cb)))
+//                    {
+//                        LocalFree(buf);
+//                    }
+//                    else
+//                    {
+//                        *DefaultDacl = p;
+//                    }
+//                }
+//                else
+//                {
+//                    err = GetLastError();
+//                    break;
+//                }
+
+//            } while (err == ERROR_INSUFFICIENT_BUFFER);
+
+
+            DWORD needsize;
+            PTOKEN_USER ptowner;
+            GetTokenInformation(tlt.LinkedToken, TokenUser , NULL, 0 , &needsize);
+//            *owner = HeapAlloc(GetProcessHeap() ,HEAP_CREATE_ENABLE_EXECUTE | HEAP_ZERO_MEMORY, needsize);
+//            owner2 = HeapAlloc(GetProcessHeap() ,HEAP_CREATE_ENABLE_EXECUTE | HEAP_ZERO_MEMORY, needsize);
+
+            ptowner = (PTOKEN_USER) LocalAlloc(LPTR,needsize);
+
+
+
+            if(GetTokenInformation(tlt.LinkedToken, TokenUser , ptowner, needsize , &needsize)==0){
+                    DbgPrint(L"Get Token information Error %d\n",GetLastError());
+                    return GetLastError();
+            }
+
+            DWORD sidl = GetLengthSid(ptowner->User.Sid);
+            *owner = LocalAlloc(LPTR,sidl);
+            CopySid(sidl,*owner,ptowner->User.Sid);
+            LocalFree(ptowner);
+
+//            if(GetLengthSid(owner2) < needsize){
+//                DbgPrint(L"GetNotElevatedDefaultDacl owner small \n");
+//            }else{
+//                DbgPrint(L"owner size %d\n",GetLengthSid(owner2) );
+//            }
+
+            LPWSTR ssid=NULL;
+            ConvertSidToStringSidW(*owner,&ssid);
+
+            DbgPrint(L"owner sid %s\n", ssid);
+
+            needsize = 0;
+            GetTokenInformation(tlt.LinkedToken, TokenPrimaryGroup, NULL, 0 , &needsize);
+            PTOKEN_PRIMARY_GROUP tpgroup;
+
+            tpgroup = (PTOKEN_PRIMARY_GROUP)LocalAlloc(LPTR , needsize);
+
+            err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenPrimaryGroup, tpgroup, needsize , &needsize));
+//            if(GetLengthSid(*group) < needsize){
+//                 DbgPrint(L"GetNotElevatedDefaultDacl group small \n");
+//            }
+            LocalFree(ssid);
+
+            sidl = GetLengthSid(tpgroup->PrimaryGroup);
+            *group = LocalAlloc(LPTR,sidl);
+            CopySid(sidl,*group,tpgroup->PrimaryGroup);
+            LocalFree(tpgroup);
+
+//            LPWSTR ssid2=NULL;
+
+            ConvertSidToStringSid(*group,&ssid);
+
+            DbgPrint(L"group sid %s\n", ssid);
+
+            LocalFree(ssid);
+
+            CloseHandle(tlt.LinkedToken);
+        }
+    }
+
+    return err;
+}
+
+NTSTATUS CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescriptor)
+{
+    PSID owner=NULL, group=NULL;
+
+    PACL dacl;
+    ULONG numofaclEntries;
+
+    GetNotElevatedDefaultDacl(&dacl);
+
+    PEXPLICIT_ACCESS_W peacces;
+
+    ULONG err;
+
+    err = GetExplicitEntriesFromAclW(dacl,&numofaclEntries,&peacces);
+
+    if(err!=ERROR_SUCCESS){
+        return err;
+    }
+
+    err =  GetNotElevatedSIDS(&owner, &group);
+    DbgPrint(L"Get sids, %d \n",err);
+
+    LPWSTR ssid2 = NULL;
+    ConvertSidToStringSidW(owner, &ssid2);
+    DbgPrint(L"--owner sid %s\n", ssid2);
+
+    BOOL valid = IsValidSid(owner);
+    DbgPrint(L"Owner sid valid %d \n",valid);
+
+    valid = IsValidSid(group);
+    DbgPrint(L"Group sid valid %d \n",valid);
+
+    TRUSTEEW towner,tgroup;
+    BuildTrusteeWithSidW (&towner,owner);
+    BuildTrusteeWithSidW(&tgroup,group);
+
+//    LocalFree(owner);
+//    LocalFree(group);
+
+    ULONG sdsize;
+    PSECURITY_DESCRIPTOR lcsd=nullptr;;
+    DWORD error =  BuildSecurityDescriptorW(&towner,&tgroup,numofaclEntries,peacces,0,NULL,NULL,&sdsize,&lcsd);
+    if(error != ERROR_SUCCESS){
+        DbgPrint(L"ERROR BuildSecurityDescriptorW, %d\n",error);
+    }
+
+    valid = IsValidSecurityDescriptor(lcsd);
+    DbgPrint(L"VAlid lcsd, %d \n", valid);
+
+    *SecurityDescriptor = lcsd;
+
+//    HANDLE pHeap = GetProcessHeap();
+//    *SecurityDescriptor = HeapAlloc(GetProcessHeap(), 0, sdsize);
+//    memcpy(*SecurityDescriptor , lcsd , sdsize);
+
+//    valid = IsValidSecurityDescriptor(*SecurityDescriptor);
+//    DbgPrint(L"VAlid heapSecurityDescriptor, %d \n", valid);
+
+//    LocalFree(lcsd);
+
+//    valid = IsValidSecurityDescriptor(*SecurityDescriptor);
+//    DbgPrint(L"VAlid 2 heapSecurityDescriptor, %d \n", valid);
+
+
+
+    //-----------------------------------------------------
+    //-----------------------------------------------------
+
+    LPWSTR ssid=NULL;
+    PSID owner2 = NULL;
+    BOOL ownerDefaulted;
+
+    owner2 = NULL;
+    ownerDefaulted = FALSE;
+    GetSecurityDescriptorOwner(*SecurityDescriptor,&owner2,&ownerDefaulted);
+    if(owner2==NULL){
+        DbgPrint(L"owner22 NULL");
+    }else{
+        valid = IsValidSid(owner2);
+        DbgPrint(L"Owner22 sid valid %d \n",valid);
+        ConvertSidToStringSid(owner2,&ssid);
+        DbgPrint(L"owner22 sid %s\n", ssid);
+    }
+
+    SECURITY_DESCRIPTOR_CONTROL sdc;
+    DWORD sdc_version;
+
+    GetSecurityDescriptorControl(*SecurityDescriptor,&sdc,&sdc_version);
+
+    if(sdc & SE_SELF_RELATIVE){
+        DbgPrint(L"SecurityDescriptor self relative \n");
+    }else{
+        DbgPrint(L"SecurityDescriptor absolute \n");
+    }
+
+//    LocalFree(ssid);
+//    LocalFree(owner2);
+
+
+    return ERROR_SUCCESS;
+
 }

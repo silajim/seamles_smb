@@ -1,43 +1,47 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.31112.23
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dokan_mirror", "dokan_mirror.vcxproj", "{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CMakePredefinedTargets", "CMakePredefinedTargets", "{C7F9D5A0-CA88-3B88-8C60-6183F8CEA244}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALL_BUILD", "ALL_BUILD.vcxproj", "{911993FE-AC25-31A8-93BE-6F3050F036CD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {F46E8E08-D16B-353F-A91A-65A75F85C1BA}
+		{08D2C4BE-F1A0-34D3-9A43-623900681D1D} = {08D2C4BE-F1A0-34D3-9A43-623900681D1D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZERO_CHECK", "ZERO_CHECK.vcxproj", "{F46E8E08-D16B-353F-A91A-65A75F85C1BA}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dokan_mirror", "dokan_mirror.vcxproj", "{08D2C4BE-F1A0-34D3-9A43-623900681D1D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {F46E8E08-D16B-353F-A91A-65A75F85C1BA}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|ARM = Debug|ARM
-		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|ARM = Release|ARM
-		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|ARM.ActiveCfg = Debug|ARM
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|ARM.Build.0 = Debug|ARM
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|ARM64.Build.0 = Debug|ARM64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|x64.ActiveCfg = Debug|x64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|x64.Build.0 = Debug|x64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|x86.ActiveCfg = Debug|Win32
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Debug|x86.Build.0 = Debug|Win32
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|ARM.ActiveCfg = Release|ARM
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|ARM.Build.0 = Release|ARM
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|ARM64.ActiveCfg = Release|ARM64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|ARM64.Build.0 = Release|ARM64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|x64.ActiveCfg = Release|x64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|x64.Build.0 = Release|x64
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|x86.ActiveCfg = Release|Win32
-		{DADCBCAD-4429-422E-9FA9-D8E538D0EF94}.Release|x86.Build.0 = Release|Win32
+		{911993FE-AC25-31A8-93BE-6F3050F036CD}.Debug|x64.ActiveCfg = Debug|x64
+		{911993FE-AC25-31A8-93BE-6F3050F036CD}.Release|x64.ActiveCfg = Release|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Debug|x64.ActiveCfg = Debug|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Debug|x64.Build.0 = Debug|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Release|x64.ActiveCfg = Release|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Release|x64.Build.0 = Release|x64
+		{08D2C4BE-F1A0-34D3-9A43-623900681D1D}.Debug|x64.ActiveCfg = Debug|x64
+		{08D2C4BE-F1A0-34D3-9A43-623900681D1D}.Debug|x64.Build.0 = Debug|x64
+		{08D2C4BE-F1A0-34D3-9A43-623900681D1D}.Release|x64.ActiveCfg = Release|x64
+		{08D2C4BE-F1A0-34D3-9A43-623900681D1D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
+	GlobalSection(NestedProjects) = preSolution
+		{911993FE-AC25-31A8-93BE-6F3050F036CD} = {C7F9D5A0-CA88-3B88-8C60-6183F8CEA244}
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {C7F9D5A0-CA88-3B88-8C60-6183F8CEA244}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {5656834E-EC43-4868-862C-E4309E04B115}
+		SolutionGuid = {947CAFEF-5975-36C9-84C4-4E44D830B094}
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
 	EndGlobalSection
 EndGlobal

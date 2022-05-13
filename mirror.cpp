@@ -118,33 +118,6 @@ struct Context{
 #define GET_FS_INSTANCE \
   reinterpret_cast<Context*>(DokanFileInfo->DokanOptions->GlobalContext)
 
-//static void DbgPrint(LPCWSTR format, ...) {
-//    if (g_DebugMode) {
-//        const WCHAR *outputString;
-//        WCHAR *buffer = NULL;
-//        size_t length;
-//        va_list argp;
-
-//        va_start(argp, format);
-//        length = _vscwprintf(format, argp) + 1;
-//        buffer = (WCHAR*)_malloca(length * sizeof(WCHAR));
-//        if (buffer) {
-//            vswprintf_s(buffer, length, format, argp);
-//            outputString = buffer;
-//        } else {
-//            outputString = format;
-//        }
-//        if (g_UseStdErr)
-//            fputws(outputString, stderr);
-//        else
-//            OutputDebugStringW(outputString);
-//        if (buffer)
-//            _freea(buffer);
-//        va_end(argp);
-//        if (g_UseStdErr)
-//            fflush(stderr);
-//    }
-//}
 
 static WCHAR RootDirectory[DOKAN_MAX_PATH] = L"C:";
 static WCHAR MountPoint[DOKAN_MAX_PATH] = L"M:\\";
@@ -161,109 +134,6 @@ static void GetFilePath(PWCHAR filePath, ULONG numberOfElements, LPCWSTR FileNam
     } else {
         wcsncat_s(filePath, numberOfElements, FileName, wcslen(FileName));
     }
-}
-static ULONG BOOL_TO_ERROR(BOOL f)
-{
-    return f ? 0 : GetLastError();
-}
-
-static ULONG GetNotElevatedSIDS(PSID *owner, PSID *group)
-{
-    HANDLE hToken;
-    ULONG err = BOOL_TO_ERROR(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken));
-
-    if (!err)
-    {
-    ULONG cb;
-        union {
-            TOKEN_LINKED_TOKEN tlt;
-            TOKEN_ELEVATION_TYPE tet;
-        };
-
-        err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenElevationType, &tet, sizeof(tet), &cb));
-
-        if (!err)
-        {
-            if (tet == TokenElevationTypeFull)
-            {
-                err = BOOL_TO_ERROR(GetTokenInformation(hToken, TokenLinkedToken, &tlt, sizeof(tlt), &cb));
-            }
-            else
-            {
-                err = ERROR_ELEVATION_REQUIRED;
-            }
-        }
-        CloseHandle(hToken);
-
-        if (!err)
-        {
-            union {
-                PTOKEN_DEFAULT_DACL p;
-                PVOID buf;
-            };
-
-//            cb = 0x100;
-
-//            do
-//            {
-//                if (buf = LocalAlloc(0, cb))
-//                {
-//                    if (err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenDefaultDacl, buf, cb, &cb)))
-//                    {
-//                        LocalFree(buf);
-//                    }
-//                    else
-//                    {
-//                        *DefaultDacl = p;
-//                    }
-//                }
-//                else
-//                {
-//                    err = GetLastError();
-//                    break;
-//                }
-
-//            } while (err == ERROR_INSUFFICIENT_BUFFER);
-
-            DWORD needsize;
-            GetTokenInformation(tlt.LinkedToken, TokenOwner, NULL, 0 , &needsize);
-            *owner = (PSID)LocalAlloc(LPTR , needsize);
-
-
-            err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenOwner, owner, needsize , &needsize));
-            if(GetLengthSid(owner) < needsize){
-                DbgPrint(L"GetNotElevatedDefaultDacl owner small \n");
-            }
-
-            LPWSTR ssid=NULL;
-            ConvertSidToStringSid(*owner,&ssid);
-
-            DbgPrint(L"owner sid %s\n", ssid);
-
-            needsize = 0;
-            GetTokenInformation(tlt.LinkedToken, TokenGroups, NULL, 0 , &needsize);
-
-            *group = (PSID)LocalAlloc(LPTR , needsize);
-
-            err = BOOL_TO_ERROR(GetTokenInformation(tlt.LinkedToken, TokenPrimaryGroup, group, needsize , &needsize));
-            if(GetLengthSid(group) < needsize){
-                 DbgPrint(L"GetNotElevatedDefaultDacl group small \n");
-            }
-            LocalFree(ssid);
-
-            LPWSTR ssid2=NULL;
-
-            ConvertSidToStringSid(*group,&ssid2);
-
-            DbgPrint(L"group sid %s\n", ssid2);
-
-            LocalFree(ssid2);
-
-            CloseHandle(tlt.LinkedToken);
-        }
-    }
-
-    return err;
 }
 
 static void PrintUserName(PDOKAN_FILE_INFO DokanFileInfo) {
@@ -1480,7 +1350,22 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 
     DbgPrint(L"GetFileSecurity %s\n", filePath);
 
-    DbgPrint(L"  Opening new handle with READ_CONTROL access\n");
+//    DbgPrint(L"  Opening new handle with READ_CONTROL access\n");
+
+    MirrorCheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, DACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, SACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, LABEL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, ATTRIBUTE_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, SCOPE_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, PROCESS_TRUST_LABEL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, ACCESS_FILTER_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, BACKUP_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, PROTECTED_DACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, PROTECTED_SACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_DACL_SECURITY_INFORMATION);
+    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_SACL_SECURITY_INFORMATION);
 
     std::wstring strFileName(filePath);
     bool changed = false;
@@ -1556,18 +1441,44 @@ static NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY
 
     }else{
 
-        if (!GetFileSecurityW(filePath, *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
-            int error = GetLastError();
-            if (error == ERROR_INSUFFICIENT_BUFFER) {
-                DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
-                //                 CloseHandle(handle);
-                return  STATUS_BUFFER_OVERFLOW;
-            } else {
-                DbgPrint(L"  GetUserObjectSecurity error: %d\n", error);
-                //                 CloseHandle(handle);
-                status = DokanNtStatusFromWin32(error);
-            }
+        PSECURITY_DESCRIPTOR SecurityDescriptor = NULL;
+
+        CreateDefaultSelfRelativeSD(&SecurityDescriptor);
+        DWORD sizeneeded;
+
+//        if(!GetPrivateObjectSecurity(SecurityDescriptor,*SecurityInformation,NULL,0,LengthNeeded)){
+//            DbgPrint(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+////            if(GetLastError())
+//            return GetLastError();
+//        }
+
+        GetPrivateObjectSecurity(SecurityDescriptor,*SecurityInformation,NULL,0,&sizeneeded);
+
+        if(sizeneeded>BufferLength){
+            *LengthNeeded = sizeneeded;
+            return STATUS_BUFFER_OVERFLOW;
         }
+
+        if(!GetPrivateObjectSecurity(SecurityDescriptor,*SecurityInformation,SecurityDescriptor,BufferLength,&sizeneeded)){
+            DbgPrint(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+            return GetLastError();
+        }
+
+
+        status = STATUS_SUCCESS;
+
+//        if (!GetFileSecurityW(filePath, *SecurityInformation, SecurityDescriptor, BufferLength, LengthNeeded)) {
+//            int error = GetLastError();
+//            if (error == ERROR_INSUFFICIENT_BUFFER) {
+//                DbgPrint(L"  GetUserObjectSecurity error: ERROR_INSUFFICIENT_BUFFER\n");
+//                //                 CloseHandle(handle);
+//                return  STATUS_BUFFER_OVERFLOW;
+//            } else {
+//                DbgPrint(L"  GetUserObjectSecurity error: %d\n", error);
+//                //                 CloseHandle(handle);
+//                status = DokanNtStatusFromWin32(error);
+//            }
+//        }
 
     // Ensure the Security Descriptor Length is set
     DWORD securityDescriptorLength = GetSecurityDescriptorLength(SecurityDescriptor);
@@ -1678,123 +1589,27 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
         return STATUS_SUCCESS;
 
     }else{
-//    if (!SetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor)) {
-//        int error = GetLastError();
-//        DbgPrint(L"  SetUserObjectSecurity error: %d\n", error);
 
-//        DOKAN_IO_SECURITY_CONTEXT SecurityContext;
-//        SecurityContext.AccessState.SecurityDescriptor = SecurityDescriptor;
+        PSECURITY_DESCRIPTOR heapSecurityDescriptor = NULL;
 
-
-        PSID owner=NULL, group=NULL;
-        ULONG err =  GetNotElevatedSIDS(&owner, &group);
-        DbgPrint(L"Get sids, %d \n",err);
-
-        BOOL valid = IsValidSid(owner);
-        DbgPrint(L"Owner sid valid %d \n",valid);
-
-        valid = IsValidSid(group);
-        DbgPrint(L"Group sid valid %d \n",valid);
-
-        TRUSTEEW towner,tgroup;
-        BuildTrusteeWithSidW (&towner,owner);
-        BuildTrusteeWithSidW(&tgroup,group);
-
-//        LocalFree(owner);
-//        LocalFree(group);
-
-        ULONG sdsize;
-        PSECURITY_DESCRIPTOR lcsd=nullptr;;
-        DWORD error =  BuildSecurityDescriptorW(&towner,&tgroup,0,NULL,0,NULL,NULL,&sdsize,&lcsd);
-        if(error != ERROR_SUCCESS){
-            DbgPrint(L"ERROR BuildSecurityDescriptorW, %d\n",error);
-        }
-
-        valid = IsValidSecurityDescriptor(lcsd);
-        DbgPrint(L"VAlid lcsd, %d \n", valid);
-
-        HANDLE pHeap = GetProcessHeap();
-        PSECURITY_DESCRIPTOR heapSecurityDescriptor = HeapAlloc(pHeap, 0, sdsize);
-        memcpy(heapSecurityDescriptor , lcsd , sdsize);
-
-        valid = IsValidSecurityDescriptor(heapSecurityDescriptor);
-        DbgPrint(L"VAlid heapSecurityDescriptor, %d \n", valid);
-
-        LocalFree(lcsd);
-
-        valid = IsValidSecurityDescriptor(heapSecurityDescriptor);
-        DbgPrint(L"VAlid 2 heapSecurityDescriptor, %d \n", valid);
-
-//        BuildSecurityDescriptorW(NULL,NULL,0,NULL,)
-//        memset(heapSecurityDescriptor,0,SECURITY_DESCRIPTOR_MIN_LENGTH);
-//        SetSecurityDescriptorControl(heapSecurityDescriptor,SE_SELF_RELATIVE,SE_SELF_RELATIVE);
-//        InitializeSecurityDescriptor(heapSecurityDescriptor,SECURITY_DESCRIPTOR_REVISION);
-//        SecurityProcessor sp;
-//        sp.
-
-
+        CreateDefaultSelfRelativeSD(&heapSecurityDescriptor);
 
         static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
                                                 FILE_GENERIC_EXECUTE,
                                                 FILE_ALL_ACCESS};
-        LPWSTR ssid=NULL;
-        PSID owner2 = NULL;
-        BOOL ownerDefaulted;
-        GetSecurityDescriptorOwner(SecurityDescriptor,&owner2,&ownerDefaulted);
-        if(owner2==NULL){
-            DbgPrint(L"owner2 NULL");
-        }else{
-            valid = IsValidSid(owner2);
-            DbgPrint(L"Owner2 sid valid %d \n",valid);
-            ConvertSidToStringSid(owner2,&ssid);
-            DbgPrint(L"owner2 sid %s\n", ssid);
-            LocalFree(ssid);
-        }
-
-        owner2 = NULL;
-        ownerDefaulted = FALSE;
-        GetSecurityDescriptorOwner(heapSecurityDescriptor,&owner2,&ownerDefaulted);
-        if(owner2==NULL){
-            DbgPrint(L"owner22 NULL");
-        }else{
-            valid = IsValidSid(owner2);
-            DbgPrint(L"Owner22 sid valid %d \n",valid);
-            ConvertSidToStringSid(owner2,&ssid);
-            DbgPrint(L"owner22 sid %s\n", ssid);
-        }
-
-        SECURITY_DESCRIPTOR_CONTROL sdc;
-        DWORD sdc_version;
-        GetSecurityDescriptorControl(SecurityDescriptor,&sdc,&sdc_version);
-
-        if(sdc & SE_SELF_RELATIVE){
-            DbgPrint(L"SecurityDescriptor self relative \n");
-        }else{
-            DbgPrint(L"SecurityDescriptor absolute \n");
-        }
-
-        GetSecurityDescriptorControl(heapSecurityDescriptor,&sdc,&sdc_version);
-
-        if(sdc & SE_SELF_RELATIVE){
-            DbgPrint(L"SecurityDescriptor self relative \n");
-        }else{
-            DbgPrint(L"SecurityDescriptor absolute \n");
-        }
-
-
-//        if(SetPrivateObjectSecurity(*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)==0) {
-//             DbgPrint(L"  SetUserObjectSecurity2 error: %d\n", GetLastError());
-//          HeapFree(pHeap, 0, heapSecurityDescriptor);
-//          return DokanNtStatusFromWin32(GetLastError());
-//        }
         NTSTATUS stat;
          stat = RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor,0, &memfs_mapping, 0);
          if(stat!=ERROR_SUCCESS){
              DbgPrint(L"  SetUserObjectSecurity2 error: %d\n", stat);
-          HeapFree(pHeap, 0, heapSecurityDescriptor);
+//          HeapFree(GetProcessHeap(), 0, heapSecurityDescriptor);
+              LocalFree(heapSecurityDescriptor);
           return DokanNtStatusFromWin32(GetLastError());
         }
 
+         PSID owner2=NULL;
+         BOOL ownerDefaulted=0;
+         BOOL valid;
+         LPWSTR ssid=NULL;
 
          GetSecurityDescriptorOwner(heapSecurityDescriptor,&owner2,&ownerDefaulted);
          if(owner2==NULL){
@@ -1814,7 +1629,8 @@ static NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY
         filenodes->_filenodes->emplace(filename_str,fil);
 
         filenodes->m_mutex.unlock();
-        HeapFree(pHeap, 0, heapSecurityDescriptor);
+//        HeapFree(GetProcessHeap(), 0, heapSecurityDescriptor);
+        LocalFree(heapSecurityDescriptor);
 
 //        return STATUS_SUCCESS;
 
@@ -2086,6 +1902,18 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     ULONG command;
     DOKAN_OPERATIONS dokanOperations;
     DOKAN_OPTIONS dokanOptions;
+
+//    _CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
+    g_DebugMode = TRUE;
+
+    PSECURITY_DESCRIPTOR sd;
+
+    CreateDefaultSelfRelativeSD(&sd);
+
+//    HeapFree(GetProcessHeap(),0,sd);
+    LocalFree(sd);
+
+//    return -1;
 
     if (argc < 3) {
         ShowUsage();
