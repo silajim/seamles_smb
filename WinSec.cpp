@@ -438,6 +438,8 @@ NTSTATUS CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescriptor)
 
     *SecurityDescriptor = lcsd;
 
+    printSD(lcsd,-1);
+
 //    HANDLE pHeap = GetProcessHeap();
 //    *SecurityDescriptor = HeapAlloc(GetProcessHeap(), 0, sdsize);
 //    memcpy(*SecurityDescriptor , lcsd , sdsize);
@@ -488,4 +490,13 @@ NTSTATUS CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescriptor)
 
     return ERROR_SUCCESS;
 
+}
+
+void printSD(PSECURITY_DESCRIPTOR sd, int num)
+{
+    LPWSTR str;
+    ConvertSidToStringSidW(sd,&str);
+    DbgPrint(L"Security Descriptor %d string %s\n",num,str);
+
+    LocalFree(str);
 }
