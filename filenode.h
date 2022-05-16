@@ -51,21 +51,15 @@ THE SOFTWARE.
 
 struct security_informations {
     std::wstring strdescriptor;
-  std::unique_ptr<byte[]> descriptor = nullptr;
+    std::unique_ptr<byte[]> descriptor = nullptr;
 //  std::unique_ptr<PACL> dacl = nullptr;
 
   unsigned long descriptor_size = 0;
 
   security_informations() = default;
 
-  void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor) {
-    if (!securitydescriptor) return;
-    descriptor_size = GetSecurityDescriptorLength(securitydescriptor);
-    descriptor = std::make_unique<byte[]>(descriptor_size);
-    memcpy(descriptor.get(), securitydescriptor, descriptor_size);
-//    SecurityProcessor sp;
-//    sp.getAllData(securitydescriptor,strdescriptor);
-  }
+  void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor);
+  void GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor);
 
 private:
 //  friend class boost::serialization::access;

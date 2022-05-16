@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 //#include <spdlog/spdlog.h>
 #include "DbgPrint.h"
+#include "WinSec.h"
 
 filenode::filenode(const std::wstring& filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context)
     : is_directory(is_directory), attributes(file_attr), _fileName(filename) {
@@ -42,6 +43,62 @@ filenode::filenode(const std::wstring& filename, bool is_directory, DWORD file_a
             std::wcout << filename << "Attach SecurityDescriptor";
         }
         security.SetDescriptor(security_context->AccessState.SecurityDescriptor);
+    }
+}
+
+void security_informations::SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor) {
+    if (!securitydescriptor) return;
+
+    PSECURITY_DESCRIPTOR internalsd = securitydescriptor;
+    DWORD internalsize =  GetSecurityDescriptorLength(securitydescriptor);
+
+    if(!isSelfRelative(securitydescriptor)){
+        DbgPrint(L"SetDescriptor Absolute converted to Self-Relative\n");
+        MakeSelfRelativeSD(securitydescriptor,internalsd,&internalsize);
+    }
+
+    descriptor_size = internalsize;
+    descriptor = std::make_unique<byte[]>(internalsize);
+    memcpy(descriptor.get(), internalsd, static_cast<size_t>(internalsize));
+
+    LPWSTR ssd;
+    unsigned long size;
+    ConvertSecurityDescriptorToStringSecurityDescriptorW(internalsd,SDDL_REVISION_1,OWNER_SECURITY_INFORMATION | ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION |  PROTECTED_SACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION |  UNPROTECTED_SACL_SECURITY_INFORMATION  , &ssd , &size);
+//    if(!ConvertSecurityDescriptorToStringSecurityDescriptorW(internalsd,SDDL_REVISION_1,OWNER_SECURITY_INFORMATION | ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION |  PROTECTED_SACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION |  UNPROTECTED_SACL_SECURITY_INFORMATION  , &ssd , &size)){
+//        return GetLastError();
+//    }
+    strdescriptor = std::wstring(ssd,size);
+
+    if(internalsd!=securitydescriptor){
+        LocalFree(internalsd);
+    }
+    //    SecurityProcessor sp;
+    //    sp.getAllData(securitydescriptor,strdescriptor);
+}
+
+void security_informations::GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor)
+{
+    if(descriptor_size!=0){
+        *securitydescriptor = LocalAlloc(LPTR, static_cast<size_t>(descriptor_size));
+        memcpy(*securitydescriptor,descriptor.get(),static_cast<size_t>(descriptor_size));
+
+        LPWSTR ssd;
+        unsigned long size;
+        if(ConvertSecurityDescriptorToStringSecurityDescriptorW(*securitydescriptor,SDDL_REVISION_1,OWNER_SECURITY_INFORMATION | ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION |  PROTECTED_SACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION |  UNPROTECTED_SACL_SECURITY_INFORMATION  , &ssd , &size)==0){
+            DbgPrint(L"ConvertSecurityDescriptorToStringSecurityDescriptorW Error %d\n",GetLastError());
+            return;
+        }
+        std::wstring strds = std::wstring(ssd,size);
+
+        if(strds == strdescriptor){
+            DbgPrint(L"Strings Equal\n");
+        }else{
+            DbgPrint(L"Strings NOT Equal\n");
+        }
+
+
+    }else{
+        CreateDefaultSelfRelativeSD(securitydescriptor);
     }
 }
 
@@ -105,3 +162,5 @@ filenode::filenode(const std::wstring& filename, bool is_directory, DWORD file_a
 //    std::lock_guard<std::mutex> lock(_data_mutex);
 //    return _streams;
 //}
+
+

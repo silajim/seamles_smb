@@ -495,8 +495,23 @@ NTSTATUS CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescriptor)
 void printSD(PSECURITY_DESCRIPTOR sd, int num)
 {
     LPWSTR str;
-    ConvertSidToStringSidW(sd,&str);
-    DbgPrint(L"Security Descriptor %d string %s\n",num,str);
+
+    BOOL valid = IsValidSecurityDescriptor(sd);
+    if(valid){
+        ConvertSecurityDescriptorToStringSecurityDescriptorW(sd,SDDL_REVISION_1,OWNER_SECURITY_INFORMATION | ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION |  PROTECTED_SACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION |  UNPROTECTED_SACL_SECURITY_INFORMATION   , &str , NULL);
+        DbgPrint(L"Security Descriptor %d string %s\n",num,str);
+    }else{
+       DbgPrint(L"Security Descriptor %d INVALID\n",num);
+    }
 
     LocalFree(str);
+}
+
+bool isSelfRelative(PSECURITY_DESCRIPTOR sd)
+{
+    SECURITY_DESCRIPTOR_CONTROL sdc;
+    DWORD sdc_version;
+    GetSecurityDescriptorControl(sd,&sdc,&sdc_version);
+
+    return sdc & SE_SELF_RELATIVE;
 }

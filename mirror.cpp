@@ -284,14 +284,6 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
         return STATUS_NO_SUCH_FILE;
     }
 
-//    if(filename_str==LR"(\***REMOVED***)"){
-//        if(!(fileAttributesAndFlags & FILE_ATTRIBUTE_DIRECTORY) ){
-//            fileAttributesAndFlags |= FILE_ATTRIBUTE_DIRECTORY;
-//            DokanFileInfo->IsDirectory = TRUE;
-
-//        }
-//    }
-
 
     PrintUserName(DokanFileInfo);
 
