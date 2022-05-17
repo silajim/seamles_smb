@@ -1790,12 +1790,16 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
     std::wstring rootdir (RootDirectory);
     std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
-//    std::filebuf filer;
-//    filer.open(rootdir+L".dat",std::ios_base::in|std::ios_base::binary);
-//    std::istream is(&filer);
-//    boost::archive::binary_iarchive ir(is, boost::archive::no_header);
 
-//    ir >> m_nodes->_filenodes;
+    if(boost::filesystem::exists(rootdir+L".dat")){
+
+        std::filebuf filer;
+        filer.open(rootdir+L".dat",std::ios_base::in|std::ios_base::binary);
+        std::istream is(&filer);
+        boost::archive::binary_iarchive ir(is, boost::archive::no_header);
+
+        ir >> m_nodes->_filenodes;
+    }
 
     DokanInit();
     status = DokanMain(&dokanOptions, &dokanOperations);
@@ -1832,14 +1836,14 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
 //    std::wstring rootdir (RootDirectory);
 //    std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
-//    std::filebuf file;
-//    file.open(rootdir+L".dat",std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
-//    std::ostream os(&file);
-//    boost::archive::binary_oarchive ar(os, boost::archive::no_header);
+    std::filebuf file;
+    file.open(rootdir+L".dat",std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
+    std::ostream os(&file);
+    boost::archive::binary_oarchive ar(os, boost::archive::no_header);
 
-//    ar << m_nodes->_filenodes;
+    ar << m_nodes->_filenodes;
 
-//    file.close();
+    file.close();
 
 //    std::cout << "Directories Cached" << std::endl;
 //    for(auto d : directory){

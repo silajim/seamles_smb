@@ -62,24 +62,26 @@ struct security_informations {
   void GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor);
 
 private:
-//  friend class boost::serialization::access;
-//     template <class Archive>
-//        void save(Archive& ar, unsigned int version) const {
-//         ar &descriptor_size;
-//         for(unsigned int i=0;i<descriptor_size;i++){
-//             ar &descriptor[i];
-//         }
-//     }
+  friend class boost::serialization::access;
+     template <class Archive>
+        void save(Archive& ar, unsigned int version) const {
+         ar &strdescriptor;
+         ar &descriptor_size;
+         for(unsigned int i=0;i<descriptor_size;i++){
+             ar &descriptor[i];
+         }
+     }
 
-//    template <class Archive>
-//        void load(Archive& ar, unsigned int version) {
-//            ar &descriptor_size;
-//            descriptor = std::make_unique<byte[]>(descriptor_size);
-//            for(unsigned int i=0;i<descriptor_size;i++){
-//                ar &descriptor[i];
-//            }
-//        }
-//        BOOST_SERIALIZATION_SPLIT_MEMBER()
+    template <class Archive>
+        void load(Archive& ar, unsigned int version) {
+            ar &strdescriptor;
+            ar &descriptor_size;
+            descriptor = std::make_unique<byte[]>(descriptor_size);
+            for(unsigned int i=0;i<descriptor_size;i++){
+                ar &descriptor[i];
+            }
+        }
+        BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 //struct filetimes {
@@ -151,7 +153,7 @@ class filenode {
        ar &attributes;
 //       ar &_data_mutex;
        ar &_fileName;
-       ar & (security);
+       ar &security;
    }
 
   // _data_mutex need to be aquired
