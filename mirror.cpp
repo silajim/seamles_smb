@@ -279,10 +279,10 @@ MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext, A
 
     // Windows will automatically try to create and access different system
     // directories.
-    if (filename_str == L"\\System Volume Information" ||
-        filename_str == L"\\$RECYCLE.BIN") {
-        return STATUS_NO_SUCH_FILE;
-    }
+//    if (filename_str == L"\\System Volume Information" ||
+//        filename_str == L"\\$RECYCLE.BIN") {
+//        return STATUS_NO_SUCH_FILE;
+//    }
 
 
     PrintUserName(DokanFileInfo);
