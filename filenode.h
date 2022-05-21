@@ -46,6 +46,7 @@ THE SOFTWARE.
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
+#include "WinSec.h"
 
 #include "securityprocessor.h"
 
@@ -58,8 +59,8 @@ struct security_informations {
 
   security_informations() = default;
 
-  void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor);
-  void GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor);
+  void SetDescriptor(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print, PSECURITY_DESCRIPTOR securitydescriptor);
+  void GetDescriptor(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print,PSECURITY_DESCRIPTOR *securitydescriptor);
 
 private:
   friend class boost::serialization::access;
@@ -111,7 +112,7 @@ private:
 // and the alternated has main_stream assigned to the main stream filenode.
 class filenode {
  public:
-  filenode(const std::wstring &filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context);
+  filenode(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print, const std::wstring &filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context);
 
 //  filenode(const filenode& f);
 
@@ -142,8 +143,16 @@ class filenode {
   security_informations security;
   std::mutex _data_mutex;
 
+  void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor);
+  void GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor);
+
+
  private:
+
   filenode() = default;
+
+  std::shared_ptr<WinSec> m_winsec;
+  std::shared_ptr<DbgPrint> m_print;
 
    friend class boost::serialization::access;
    template <class Archive>

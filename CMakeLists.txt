@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15.0 FATAL_ERROR)
 
 set(CMAKE_SYSTEM_VERSION 10.0.22000.0 CACHE STRING "" FORCE)
 
-project(dokan_mirror C CXX)
+project(seamless_smb  C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake")
 set(Boost_USE_STATIC_RUNTIME ON)
@@ -55,6 +55,8 @@ set(Sources
     "globals.h "
     "globals.cpp"
     "mirror.cpp"
+    "fileops.h"
+    "fileops.cpp"
     "filenode.cpp"
     "filenode.h"
     "filesecurity.h"
@@ -65,6 +67,9 @@ set(Sources
     "WinSec.h"
     "securityprocessor.h"
     "securityprocessor.cpp"
+"consolehandler.h"
+"consolehandler.cpp"
+
 )
 source_group("Sources" FILES ${Sources})
 

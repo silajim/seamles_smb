@@ -1,32 +1,19 @@
-#include "filesecurity.h"
+#include <windows.h>
+#include <sddl.h>
+
+#include "include/dokan/dokan.h"
+#include "include/dokan/fileinfo.h"
+
+
+//#include "filesecurity.h"
 #include "DbgPrint.h"
 #include "context.h"
 #include "WinSec.h"
 #include "globals.h"
 
+#include "fileops.h"
 
-#define GET_FS_INSTANCE \
-  reinterpret_cast<Context*>(DokanFileInfo->DokanOptions->GlobalContext)
-
-static void GetFilePath(PWCHAR filePath, ULONG numberOfElements, LPCWSTR FileName) {
-    wcsncpy_s(filePath, numberOfElements, RootDirectory, wcslen(RootDirectory));
-    size_t unclen = wcslen(UNCName);
-    if (unclen > 0 && _wcsnicmp(FileName, UNCName, unclen) == 0) {
-        if (_wcsnicmp(FileName + unclen, L".", 1) != 0) {
-            wcsncat_s(filePath, numberOfElements, FileName + unclen,
-                      wcslen(FileName) - unclen);
-        }
-    } else {
-        wcsncat_s(filePath, numberOfElements, FileName, wcslen(FileName));
-    }
-}
-
-#define MirrorCheckFlag(val, flag)                                             \
-    if (val & flag) {                                                            \
-    DbgPrint(L"\t" L#flag L"\n");                                              \
-    }
-
-NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORMATION SecurityInformation,  PSECURITY_DESCRIPTOR SecurityDescriptor, ULONG BufferLength, PULONG LengthNeeded, PDOKAN_FILE_INFO DokanFileInfo) {
+NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORMATION SecurityInformation,  PSECURITY_DESCRIPTOR SecurityDescriptor, ULONG BufferLength, PULONG LengthNeeded, PDOKAN_FILE_INFO DokanFileInfo) {
     WCHAR filePath[DOKAN_MAX_PATH];
     BOOLEAN requestingSaclInfo;
     auto filenodes = GET_FS_INSTANCE;
@@ -35,24 +22,24 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
 
-    DbgPrint(L"GetFileSecurity %s\n", filePath);
+    m_print->print(L"GetFileSecurity %s\n", filePath);
 
-//    DbgPrint(L"  Opening new handle with READ_CONTROL access\n");
+//    m_print->print(L"  Opening new handle with READ_CONTROL access\n");
 
-    MirrorCheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, DACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, SACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, LABEL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, ATTRIBUTE_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, SCOPE_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, PROCESS_TRUST_LABEL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, ACCESS_FILTER_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, BACKUP_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, PROTECTED_DACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, PROTECTED_SACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_DACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_SACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, DACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, SACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, LABEL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, ATTRIBUTE_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, SCOPE_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, PROCESS_TRUST_LABEL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, ACCESS_FILTER_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, BACKUP_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, PROTECTED_DACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, PROTECTED_SACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, UNPROTECTED_DACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, UNPROTECTED_SACL_SECURITY_INFORMATION);
 
     std::wstring strFileName(filePath);
     bool changed = false;
@@ -78,7 +65,7 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
 
 
-        printSD(heapSecurityDescriptor,4);
+        m_winsec->printSD(heapSecurityDescriptor,4);
 
         ULONG sizeneeded = 0;
 
@@ -91,7 +78,7 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
 
         if(!GetPrivateObjectSecurity(heapSecurityDescriptor,*SecurityInformation,SecurityDescriptor,BufferLength,&sizeneeded)){
-            DbgPrint(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+            m_print->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
             return GetLastError();
         }
 
@@ -100,7 +87,7 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
         LocalFree(heapSecurityDescriptor);
         //         LocalFree(newsd);
 
-        printSD(SecurityDescriptor,5);
+        m_winsec->printSD(SecurityDescriptor,5);
         *LengthNeeded = sizeneeded;
 
         status = STATUS_SUCCESS;
@@ -110,11 +97,11 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
         PSECURITY_DESCRIPTOR newSecurityDescriptor = NULL;
 
-        CreateDefaultSelfRelativeSD(&newSecurityDescriptor);
+        m_winsec->CreateDefaultSelfRelativeSD(&newSecurityDescriptor);
         DWORD sizeneeded;
 
 //        if(!GetPrivateObjectSecurity(SecurityDescriptor,*SecurityInformation,NULL,0,LengthNeeded)){
-//            DbgPrint(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+//            m_print->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
 ////            if(GetLastError())
 //            return GetLastError();
 //        }
@@ -130,7 +117,7 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 //        static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE, FILE_GENERIC_EXECUTE, FILE_ALL_ACCESS};
 
 //       if(SetPrivateObjectSecurity(DACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION ,nsd,&newSecurityDescriptor, &memfs_mapping, 0)==0){
-//           DbgPrint(L"  --TEST SetUserObjectSecurity error: %d\n", stat);
+//           m_print->print(L"  --TEST SetUserObjectSecurity error: %d\n", stat);
 //            LocalFree(newSecurityDescriptor);
 //        return DokanNtStatusFromWin32(GetLastError());
 //       }
@@ -143,11 +130,11 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
         }
 
         if(!GetPrivateObjectSecurity(newSecurityDescriptor,*SecurityInformation,SecurityDescriptor,BufferLength,&sizeneeded)){
-            DbgPrint(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+            m_print->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
             return GetLastError();
         }
 
-        printSD(SecurityDescriptor,0);
+        m_winsec->printSD(SecurityDescriptor,0);
 
 
         status = STATUS_SUCCESS;
@@ -157,7 +144,7 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
     // Ensure the Security Descriptor Length is set
 //    DWORD securityDescriptorLength = GetSecurityDescriptorLength(SecurityDescriptor);
-//    DbgPrint(L"  GetUserObjectSecurity return true,  *LengthNeeded = securityDescriptorLength \n");
+//    m_print->print(L"  GetUserObjectSecurity return true,  *LengthNeeded = securityDescriptorLength \n");
 
     *LengthNeeded = sizeneeded;
 
@@ -167,7 +154,7 @@ NTSTATUS DOKAN_CALLBACK MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
     }
 }
 
-NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR SecurityDescriptor, ULONG SecurityDescriptorLength, PDOKAN_FILE_INFO DokanFileInfo) {
+NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR SecurityDescriptor, ULONG SecurityDescriptorLength, PDOKAN_FILE_INFO DokanFileInfo) {
     HANDLE handle;
     WCHAR filePath[DOKAN_MAX_PATH];
      auto filenodes = GET_FS_INSTANCE;
@@ -175,28 +162,28 @@ NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
 
-    DbgPrint(L"SetFileSecurity %s\n", filePath);
+    m_print->print(L"SetFileSecurity %s\n", filePath);
 
     handle = (HANDLE)DokanFileInfo->Context;
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        DbgPrint(L"\tinvalid handle\n\n");
+        m_print->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
-    MirrorCheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, DACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, SACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, LABEL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, ATTRIBUTE_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, SCOPE_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, PROCESS_TRUST_LABEL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, ACCESS_FILTER_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, BACKUP_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, PROTECTED_DACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, PROTECTED_SACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_DACL_SECURITY_INFORMATION);
-    MirrorCheckFlag(*SecurityInformation, UNPROTECTED_SACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, DACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, SACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, LABEL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, ATTRIBUTE_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, SCOPE_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, PROCESS_TRUST_LABEL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, ACCESS_FILTER_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, BACKUP_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, PROTECTED_DACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, PROTECTED_SACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, UNPROTECTED_DACL_SECURITY_INFORMATION);
+    CheckFlag(*SecurityInformation, UNPROTECTED_SACL_SECURITY_INFORMATION);
 
     SECURITY_DESCRIPTOR_RELATIVE *cast = (SECURITY_DESCRIPTOR_RELATIVE*)SecurityDescriptor;
     SECURITY_DESCRIPTOR *cast2 = (SECURITY_DESCRIPTOR*)SecurityDescriptor;
@@ -250,7 +237,7 @@ NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
         NTSTATUS stat;
 
-        stat = RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, 0 ,&memfs_mapping, 0);
+        stat = m_winsec->RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, 0 ,&memfs_mapping, 0);
         if(stat != ERROR_SUCCESS){
             LocalFree(heapSecurityDescriptor);
 //          HeapFree(pHeap, 0, heapSecurityDescriptor);
@@ -267,24 +254,24 @@ NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
         PSECURITY_DESCRIPTOR heapSecurityDescriptor = NULL;
 
-        CreateDefaultSelfRelativeSD(&heapSecurityDescriptor);
+        m_winsec->CreateDefaultSelfRelativeSD(&heapSecurityDescriptor);
 
         static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
                                                 FILE_GENERIC_EXECUTE,
                                                 FILE_ALL_ACCESS};
-        printSD(SecurityDescriptor,2);
+        m_winsec->printSD(SecurityDescriptor,2);
 
         NTSTATUS stat;
 //         stat = RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor,0, &memfs_mapping, 0);
 //         if(stat!=ERROR_SUCCESS){
-//             DbgPrint(L"  SetUserObjectSecurity2 error: %d\n", stat);
+//             m_print->print(L"  SetUserObjectSecurity2 error: %d\n", stat);
 ////          HeapFree(GetProcessHeap(), 0, heapSecurityDescriptor);
 //              LocalFree(heapSecurityDescriptor);
 //          return DokanNtStatusFromWin32(GetLastError());
 //        }
 
          if(SetPrivateObjectSecurity(*SecurityInformation,SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)==0){
-             DbgPrint(L"  SetUserObjectSecurity2 error: %d\n", stat);
+             m_print->print(L"  SetUserObjectSecurity2 error: %d\n", stat);
 //          HeapFree(GetProcessHeap(), 0, heapSecurityDescriptor);
               LocalFree(heapSecurityDescriptor);
           return DokanNtStatusFromWin32(GetLastError());
@@ -297,15 +284,15 @@ NTSTATUS DOKAN_CALLBACK MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORM
 
          GetSecurityDescriptorOwner(heapSecurityDescriptor,&owner2,&ownerDefaulted);
          if(owner2==NULL){
-             DbgPrint(L"after owner22 NULL");
+             m_print->print(L"after owner22 NULL");
          }else{
              valid = IsValidSid(owner2);
-             DbgPrint(L"after Owner22 sid valid %d \n",valid);
+             m_print->print(L"after Owner22 sid valid %d \n",valid);
              ConvertSidToStringSid(owner2,&ssid);
-             DbgPrint(L"after owner22 sid %s\n", ssid);
+             m_print->print(L"after owner22 sid %s\n", ssid);
          }
 
-         printSD(heapSecurityDescriptor,3);
+         m_winsec->printSD(heapSecurityDescriptor,3);
 
 
 

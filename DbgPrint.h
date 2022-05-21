@@ -9,8 +9,19 @@
 #include <string>
 #include <iostream>
 
-extern BOOL g_UseStdErr;
-extern BOOL g_DebugMode;
+//extern BOOL g_UseStdErr;
+//extern BOOL g_DebugMode;
 
-void DbgPrint(LPCWSTR format, ...);
+//void DbgPrint(LPCWSTR format, ...);
+
+class DbgPrint{
+public:
+ DbgPrint(bool UseStdErr , bool DebugMode);
+
+ void print(LPCWSTR format, ...);
+
+private:
+ bool m_UseStdErr;
+ bool m_DebugMode;
+};
 #endif // DBGPRINT_H

@@ -1,7 +1,14 @@
 #include "DbgPrint.h"
 
-void DbgPrint(LPCWSTR format, ...) {
-    if (g_DebugMode) {
+
+
+DbgPrint::DbgPrint(bool UseStdErr, bool DebugMode):m_UseStdErr(UseStdErr),m_DebugMode(DebugMode)
+{
+
+}
+
+void DbgPrint::print(LPCWSTR format, ...) {
+    if (m_DebugMode) {
         const WCHAR *outputString;
         WCHAR *buffer = NULL;
         size_t length;
@@ -16,14 +23,14 @@ void DbgPrint(LPCWSTR format, ...) {
         } else {
             outputString = format;
         }
-        if (g_UseStdErr)
+        if (m_UseStdErr)
             fputws(outputString, stderr);
         else
             OutputDebugStringW(outputString);
         if (buffer)
             _freea(buffer);
         va_end(argp);
-        if (g_UseStdErr)
+        if (m_UseStdErr)
             fflush(stderr);
     }
 }

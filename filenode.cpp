@@ -31,29 +31,42 @@ THE SOFTWARE.
 #include "DbgPrint.h"
 #include "WinSec.h"
 
-filenode::filenode(const std::wstring& filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context)
+filenode::filenode(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print,const std::wstring& filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context)
     : is_directory(is_directory), attributes(file_attr), _fileName(filename) {
     // No lock need, FileNode is still not in a directory
     //  times.reset();
 
+    m_print = print;
+    m_winsec = winsec;
+
     if (security_context && security_context->AccessState.SecurityDescriptor) {
         //    spdlog::info(L"{} : Attach SecurityDescriptor", filename);
         //      DbgPrint(L"%s : Attach SecurityDescriptor",filename);
-        if(g_UseStdErr){
-            std::wcout << filename << "Attach SecurityDescriptor";
-        }
-        security.SetDescriptor(security_context->AccessState.SecurityDescriptor);
+//        if(g_UseStdErr){
+//            std::wcout << filename << "Attach SecurityDescriptor";
+//        }
+        security.SetDescriptor(m_winsec,m_print,security_context->AccessState.SecurityDescriptor);
     }
 }
 
-void security_informations::SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor) {
+void filenode::SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor)
+{
+    security.SetDescriptor(m_winsec,m_print,securitydescriptor);
+}
+
+void filenode::GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor)
+{
+    security.GetDescriptor(m_winsec,m_print,securitydescriptor);
+}
+
+void security_informations::SetDescriptor(std::shared_ptr<WinSec> winsec , std::shared_ptr<DbgPrint> print ,PSECURITY_DESCRIPTOR securitydescriptor) {
     if (!securitydescriptor) return;
 
     PSECURITY_DESCRIPTOR internalsd = securitydescriptor;
     DWORD internalsize =  GetSecurityDescriptorLength(securitydescriptor);
 
-    if(!isSelfRelative(securitydescriptor)){
-        DbgPrint(L"SetDescriptor Absolute converted to Self-Relative\n");
+    if(!winsec->isSelfRelative(securitydescriptor)){
+        print->print(L"SetDescriptor Absolute converted to Self-Relative\n");
         MakeSelfRelativeSD(securitydescriptor,internalsd,&internalsize);
     }
 
@@ -76,7 +89,7 @@ void security_informations::SetDescriptor(PSECURITY_DESCRIPTOR securitydescripto
     //    sp.getAllData(securitydescriptor,strdescriptor);
 }
 
-void security_informations::GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor)
+void security_informations::GetDescriptor(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print,PSECURITY_DESCRIPTOR *securitydescriptor)
 {
     if(descriptor_size!=0){
         *securitydescriptor = LocalAlloc(LPTR, static_cast<size_t>(descriptor_size));
@@ -91,14 +104,14 @@ void security_informations::GetDescriptor(PSECURITY_DESCRIPTOR *securitydescript
         std::wstring strds = std::wstring(ssd,size);
 
         if(strds == strdescriptor){
-            DbgPrint(L"Strings Equal\n");
+            print->print(L"Strings Equal\n");
         }else{
-            DbgPrint(L"Strings NOT Equal\n");
+            print->print(L"Strings NOT Equal\n");
         }
 
 
     }else{
-        CreateDefaultSelfRelativeSD(securitydescriptor);
+        winsec->CreateDefaultSelfRelativeSD(securitydescriptor);
     }
 }
 
