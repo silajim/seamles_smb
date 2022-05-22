@@ -7,7 +7,7 @@
 
 //#include "filesecurity.h"
 #include "DbgPrint.h"
-#include "context.h"
+#include "nodes.h"
 #include "WinSec.h"
 #include "globals.h"
 
@@ -20,11 +20,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
 
     UNREFERENCED_PARAMETER(DokanFileInfo);
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"GetFileSecurity %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"GetFileSecurity %s\n", filePath);
 
-//    m_print->print(L"  Opening new handle with READ_CONTROL access\n");
+//    GET_PRINT_INSTANCE->print(L"  Opening new handle with READ_CONTROL access\n");
 
     CheckFlag(*SecurityInformation, OWNER_SECURITY_INFORMATION);
     CheckFlag(*SecurityInformation, GROUP_SECURITY_INFORMATION);
@@ -61,11 +61,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
 
         PSECURITY_DESCRIPTOR heapSecurityDescriptor = nullptr;
 
-        f->security.GetDescriptor(&heapSecurityDescriptor);
+        f->security.GetDescriptor(GET_WINSEC_INSTANCE,GET_PRINT_INSTANCE,&heapSecurityDescriptor);
 
 
 
-        m_winsec->printSD(heapSecurityDescriptor,4);
+        GET_WINSEC_INSTANCE->printSD(heapSecurityDescriptor,4);
 
         ULONG sizeneeded = 0;
 
@@ -78,7 +78,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
 
 
         if(!GetPrivateObjectSecurity(heapSecurityDescriptor,*SecurityInformation,SecurityDescriptor,BufferLength,&sizeneeded)){
-            m_print->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+            GET_PRINT_INSTANCE->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
             return GetLastError();
         }
 
@@ -87,7 +87,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
         LocalFree(heapSecurityDescriptor);
         //         LocalFree(newsd);
 
-        m_winsec->printSD(SecurityDescriptor,5);
+        GET_WINSEC_INSTANCE->printSD(SecurityDescriptor,5);
         *LengthNeeded = sizeneeded;
 
         status = STATUS_SUCCESS;
@@ -97,11 +97,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
 
         PSECURITY_DESCRIPTOR newSecurityDescriptor = NULL;
 
-        m_winsec->CreateDefaultSelfRelativeSD(&newSecurityDescriptor);
+        GET_WINSEC_INSTANCE->CreateDefaultSelfRelativeSD(&newSecurityDescriptor);
         DWORD sizeneeded;
 
 //        if(!GetPrivateObjectSecurity(SecurityDescriptor,*SecurityInformation,NULL,0,LengthNeeded)){
-//            m_print->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+//            GET_PRINT_INSTANCE->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
 ////            if(GetLastError())
 //            return GetLastError();
 //        }
@@ -117,7 +117,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
 //        static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE, FILE_GENERIC_EXECUTE, FILE_ALL_ACCESS};
 
 //       if(SetPrivateObjectSecurity(DACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION ,nsd,&newSecurityDescriptor, &memfs_mapping, 0)==0){
-//           m_print->print(L"  --TEST SetUserObjectSecurity error: %d\n", stat);
+//           GET_PRINT_INSTANCE->print(L"  --TEST SetUserObjectSecurity error: %d\n", stat);
 //            LocalFree(newSecurityDescriptor);
 //        return DokanNtStatusFromWin32(GetLastError());
 //       }
@@ -130,11 +130,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
         }
 
         if(!GetPrivateObjectSecurity(newSecurityDescriptor,*SecurityInformation,SecurityDescriptor,BufferLength,&sizeneeded)){
-            m_print->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
+            GET_PRINT_INSTANCE->print(L"GetPrivateObjectSecurity Error %d\n",GetLastError());
             return GetLastError();
         }
 
-        m_winsec->printSD(SecurityDescriptor,0);
+        GET_WINSEC_INSTANCE->printSD(SecurityDescriptor,0);
 
 
         status = STATUS_SUCCESS;
@@ -144,7 +144,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileSecurity(LPCWSTR FileName, PSECURI
 
     // Ensure the Security Descriptor Length is set
 //    DWORD securityDescriptorLength = GetSecurityDescriptorLength(SecurityDescriptor);
-//    m_print->print(L"  GetUserObjectSecurity return true,  *LengthNeeded = securityDescriptorLength \n");
+//    GET_PRINT_INSTANCE->print(L"  GetUserObjectSecurity return true,  *LengthNeeded = securityDescriptorLength \n");
 
     *LengthNeeded = sizeneeded;
 
@@ -160,13 +160,13 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileSecurity(LPCWSTR FileName, PSECURI
      auto filenodes = GET_FS_INSTANCE;
 
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"SetFileSecurity %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"SetFileSecurity %s\n", filePath);
 
     handle = (HANDLE)DokanFileInfo->Context;
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
@@ -214,7 +214,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileSecurity(LPCWSTR FileName, PSECURI
 //        HANDLE pHeap = GetProcessHeap();
 //        DWORD descSize =  f->security.descriptor_size == 0 ? SecurityDescriptorLength : f->security.descriptor_size;
         PSECURITY_DESCRIPTOR heapSecurityDescriptor; //= HeapAlloc(pHeap, 0, descSize);
-        f->security.GetDescriptor(&heapSecurityDescriptor);
+        f->security.GetDescriptor(GET_WINSEC_INSTANCE,GET_PRINT_INSTANCE,&heapSecurityDescriptor);
 //        if (!heapSecurityDescriptor)
 //            return STATUS_INSUFFICIENT_RESOURCES;
 
@@ -237,14 +237,14 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileSecurity(LPCWSTR FileName, PSECURI
 
         NTSTATUS stat;
 
-        stat = m_winsec->RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, 0 ,&memfs_mapping, 0);
+        stat = GET_WINSEC_INSTANCE->RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, 0 ,&memfs_mapping, 0);
         if(stat != ERROR_SUCCESS){
             LocalFree(heapSecurityDescriptor);
 //          HeapFree(pHeap, 0, heapSecurityDescriptor);
           return DokanNtStatusFromWin32(GetLastError());
         }
 
-        f->security.SetDescriptor(heapSecurityDescriptor);
+        f->security.SetDescriptor(GET_WINSEC_INSTANCE,GET_PRINT_INSTANCE,heapSecurityDescriptor);
 //        HeapFree(pHeap, 0, heapSecurityDescriptor);
         LocalFree(heapSecurityDescriptor);
 
@@ -254,24 +254,24 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileSecurity(LPCWSTR FileName, PSECURI
 
         PSECURITY_DESCRIPTOR heapSecurityDescriptor = NULL;
 
-        m_winsec->CreateDefaultSelfRelativeSD(&heapSecurityDescriptor);
+        GET_WINSEC_INSTANCE->CreateDefaultSelfRelativeSD(&heapSecurityDescriptor);
 
         static GENERIC_MAPPING memfs_mapping = {FILE_GENERIC_READ, FILE_GENERIC_WRITE,
                                                 FILE_GENERIC_EXECUTE,
                                                 FILE_ALL_ACCESS};
-        m_winsec->printSD(SecurityDescriptor,2);
+        GET_WINSEC_INSTANCE->printSD(SecurityDescriptor,2);
 
         NTSTATUS stat;
 //         stat = RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor,0, &memfs_mapping, 0);
 //         if(stat!=ERROR_SUCCESS){
-//             m_print->print(L"  SetUserObjectSecurity2 error: %d\n", stat);
+//             GET_PRINT_INSTANCE->print(L"  SetUserObjectSecurity2 error: %d\n", stat);
 ////          HeapFree(GetProcessHeap(), 0, heapSecurityDescriptor);
 //              LocalFree(heapSecurityDescriptor);
 //          return DokanNtStatusFromWin32(GetLastError());
 //        }
 
          if(SetPrivateObjectSecurity(*SecurityInformation,SecurityDescriptor,&heapSecurityDescriptor, &memfs_mapping, 0)==0){
-             m_print->print(L"  SetUserObjectSecurity2 error: %d\n", stat);
+             GET_PRINT_INSTANCE->print(L"  SetUserObjectSecurity2 error: %d\n", stat);
 //          HeapFree(GetProcessHeap(), 0, heapSecurityDescriptor);
               LocalFree(heapSecurityDescriptor);
           return DokanNtStatusFromWin32(GetLastError());
@@ -284,22 +284,22 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileSecurity(LPCWSTR FileName, PSECURI
 
          GetSecurityDescriptorOwner(heapSecurityDescriptor,&owner2,&ownerDefaulted);
          if(owner2==NULL){
-             m_print->print(L"after owner22 NULL");
+             GET_PRINT_INSTANCE->print(L"after owner22 NULL");
          }else{
              valid = IsValidSid(owner2);
-             m_print->print(L"after Owner22 sid valid %d \n",valid);
+             GET_PRINT_INSTANCE->print(L"after Owner22 sid valid %d \n",valid);
              ConvertSidToStringSid(owner2,&ssid);
-             m_print->print(L"after owner22 sid %s\n", ssid);
+             GET_PRINT_INSTANCE->print(L"after owner22 sid %s\n", ssid);
          }
 
-         m_winsec->printSD(heapSecurityDescriptor,3);
+         GET_WINSEC_INSTANCE->printSD(heapSecurityDescriptor,3);
 
 
 
         filenodes->m_mutex.lock();
 
         auto fil = std::make_shared<filenode>(filename_str, DokanFileInfo->IsDirectory, 0, nullptr);
-        fil->security.SetDescriptor(heapSecurityDescriptor);
+        fil->security.SetDescriptor(GET_WINSEC_INSTANCE,GET_PRINT_INSTANCE,heapSecurityDescriptor);
         filenodes->_filenodes->emplace(filename_str,fil);
 
         filenodes->m_mutex.unlock();

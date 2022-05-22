@@ -31,13 +31,13 @@ THE SOFTWARE.
 #include "DbgPrint.h"
 #include "WinSec.h"
 
-filenode::filenode(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print,const std::wstring& filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context)
+filenode::filenode(const std::wstring& filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context)
     : is_directory(is_directory), attributes(file_attr), _fileName(filename) {
     // No lock need, FileNode is still not in a directory
     //  times.reset();
 
-    m_print = print;
-    m_winsec = winsec;
+//    m_print = print;
+//    m_winsec = winsec;
 
     if (security_context && security_context->AccessState.SecurityDescriptor) {
         //    spdlog::info(L"{} : Attach SecurityDescriptor", filename);

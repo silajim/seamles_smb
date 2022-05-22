@@ -64,8 +64,9 @@ http://dokan-dev.github.io
 #include "WinSec.h"
 #include "filesecurity.h"
 #include "globals.h"
-#include "context.h"
+#include "nodes.h"
 #include "fileops.h"
+#include "Context.h"
 
 
 //BOOL g_UseStdErr;
@@ -350,7 +351,8 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 //    dokanOptions.ThreadCount = 0; // use default
 
 
-    bool g_DebugMode , g_UseStdErr;
+    bool g_DebugMode=false , g_UseStdErr=false;
+    globals = std::make_shared<Globals>();
 
 
 
@@ -477,11 +479,9 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
     std::shared_ptr<DbgPrint> dbgp = std::make_shared<DbgPrint>(g_UseStdErr,g_DebugMode);
 
-
-
     // Add security name privilege. Required here to handle GetFileSecurity
     // properly.
-     globals->setHasSeSecurityPrivilege(AddSeSecurityNamePrivilege(dbgp);
+    globals->setHasSeSecurityPrivilege(AddSeSecurityNamePrivilege(dbgp));
     if (!globals->HasSeSecurityPrivilege()) {
         fwprintf(stderr,
                  L"[Mirror] Failed to add security privilege to process\n"
@@ -506,43 +506,49 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
     dokanOptions.Options |= DOKAN_OPTION_ALT_STREAM;
 
+    std::shared_ptr<Nodes> m_nodes = std::make_shared<Nodes>();
+    std::shared_ptr<WinSec> winsec = std::make_shared<WinSec>(dbgp);
+    std::shared_ptr<Context> context = std::make_shared<Context>();
+    context->globals = globals;
+    context->print = dbgp;
+    context->nodes = m_nodes;
+    context->winsec = winsec;
 
-    std::shared_ptr<FileOp
+    std::shared_ptr<FileOps> fops = std::make_shared<FileOps>(m_nodes,dbgp,globals);
 
 
 
     ZeroMemory(&dokanOperations, sizeof(DOKAN_OPERATIONS));
-    dokanOperations.ZwCreateFile = MirrorCreateFile;
-    dokanOperations.Cleanup = MirrorCleanup;
-    dokanOperations.CloseFile = MirrorCloseFile;
-    dokanOperations.ReadFile = MirrorReadFile;
-    dokanOperations.WriteFile = MirrorWriteFile;
-    dokanOperations.FlushFileBuffers = MirrorFlushFileBuffers;
-    dokanOperations.GetFileInformation = MirrorGetFileInformation;
-    dokanOperations.FindFiles = MirrorFindFiles;
+    dokanOperations.ZwCreateFile = &FileOps::MirrorCreateFile;
+    dokanOperations.Cleanup = &FileOps::MirrorCleanup;
+    dokanOperations.CloseFile = &FileOps::MirrorCloseFile;
+    dokanOperations.ReadFile = &FileOps::MirrorReadFile;
+    dokanOperations.WriteFile = &FileOps::MirrorWriteFile;
+    dokanOperations.FlushFileBuffers = &FileOps::MirrorFlushFileBuffers;
+    dokanOperations.GetFileInformation = &FileOps::MirrorGetFileInformation;
+    dokanOperations.FindFiles = &FileOps::MirrorFindFiles;
     dokanOperations.FindFilesWithPattern = NULL;
-    dokanOperations.SetFileAttributes = MirrorSetFileAttributes;
-    dokanOperations.SetFileTime = MirrorSetFileTime;
-    dokanOperations.DeleteFile = MirrorDeleteFile;
-    dokanOperations.DeleteDirectory = MirrorDeleteDirectory;
-    dokanOperations.MoveFile = MirrorMoveFile;
-    dokanOperations.SetEndOfFile = MirrorSetEndOfFile;
-    dokanOperations.SetAllocationSize = MirrorSetAllocationSize;
-    dokanOperations.LockFile = MirrorLockFile;
-    dokanOperations.UnlockFile = MirrorUnlockFile;
-    dokanOperations.GetFileSecurity = MirrorGetFileSecurity;
-    dokanOperations.SetFileSecurity = MirrorSetFileSecurity;
-    dokanOperations.GetDiskFreeSpace = MirrorDokanGetDiskFreeSpace;
-    dokanOperations.GetVolumeInformation = MirrorGetVolumeInformation;
-    dokanOperations.Unmounted = MirrorUnmounted;
-    dokanOperations.FindStreams = MirrorFindStreams;
-    dokanOperations.Mounted = MirrorMounted;
+    dokanOperations.SetFileAttributes = &FileOps::MirrorSetFileAttributes;
+    dokanOperations.SetFileTime = &FileOps::MirrorSetFileTime;
+    dokanOperations.DeleteFile = &FileOps::MirrorDeleteFile;
+    dokanOperations.DeleteDirectory = &FileOps::DeleteDirectory;
+    dokanOperations.MoveFile = &FileOps::MirrorMoveFile;
+    dokanOperations.SetEndOfFile = &FileOps::MirrorSetEndOfFile;
+    dokanOperations.SetAllocationSize = &FileOps::MirrorSetAllocationSize;
+    dokanOperations.LockFile = &FileOps::MirrorLockFile;
+    dokanOperations.UnlockFile = &FileOps::MirrorUnlockFile;
+    dokanOperations.GetFileSecurity = &FileOps::MirrorGetFileSecurity;
+    dokanOperations.SetFileSecurity = &FileOps::MirrorSetFileSecurity;
+    dokanOperations.GetDiskFreeSpace = &FileOps::MirrorDokanGetDiskFreeSpace;
+    dokanOperations.GetVolumeInformation = &FileOps::MirrorGetVolumeInformation;
+    dokanOperations.Unmounted = &FileOps::MirrorUnmounted;
+    dokanOperations.FindStreams = &FileOps::MirrorFindStreams;
+    dokanOperations.Mounted = &FileOps::MirrorMounted;
 
-    std::shared_ptr<Context> m_nodes;
-    m_nodes = std::make_shared<Context>();
+//    std::shared_ptr<Context> m_nodes;
     m_nodes->_filenodes = std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
 
-    dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(m_nodes.get());
+    dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(context.get());
 
     std::wstring rootdir = globals->RootDirectory();
     std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');

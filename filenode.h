@@ -112,7 +112,7 @@ private:
 // and the alternated has main_stream assigned to the main stream filenode.
 class filenode {
  public:
-  filenode(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print, const std::wstring &filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context);
+  filenode(const std::wstring &filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context);
 
 //  filenode(const filenode& f);
 

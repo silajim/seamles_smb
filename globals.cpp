@@ -87,13 +87,3 @@ void Globals::setHasSeSecurityPrivilege(bool newHasSeSecurityPrivilege)
 {
     m_HasSeSecurityPrivilege = newHasSeSecurityPrivilege;
 }
-
-bool Globals::HasSeSecurityPrivilege() const
-{
-    return m_HasSeSecurityPrivilege;
-}
-
-void Globals::setHasSeSecurityPrivilege(bool newHasSeSecurityPrivilege)
-{
-    m_HasSeSecurityPrivilege = newHasSeSecurityPrivilege;
-}

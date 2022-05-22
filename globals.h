@@ -23,8 +23,8 @@
 
 class Globals{
     public:
-    explicit Globals();
-    explicit Globals(std::wstring RootDirectory, std::wstring MountPoint , std::wstring UNCName);
+    Globals();
+    Globals(std::wstring RootDirectory, std::wstring MountPoint , std::wstring UNCName);
 
 
     const std::wstring &RootDirectory() const;

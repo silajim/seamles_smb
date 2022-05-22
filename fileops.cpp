@@ -2,17 +2,17 @@
 
 
 
-FileOps::FileOps(std::shared_ptr<Context> context , std::shared_ptr<DbgPrint> print, std::shared_ptr<Globals> globals)
+FileOps::FileOps(std::shared_ptr<Nodes> context , std::shared_ptr<DbgPrint> print, std::shared_ptr<Globals> globals)
 {
     m_print = print;
     m_globals = globals;
     m_context = context;
     m_winsec = std::make_shared<WinSec>(print);
 }
-void FileOps::GetFilePath(PWCHAR filePath, ULONG numberOfElements, LPCWSTR FileName) {
-    wcsncpy_s(filePath, numberOfElements, m_globals->RootDirectory().c_str(), wcslen(m_globals->RootDirectory().c_str()));
-    size_t unclen =  m_globals->UNCName().size(); //wcslen(UNCName);
-    if (unclen > 0 && _wcsnicmp(FileName, m_globals->UNCName().c_str(), unclen) == 0) {
+void FileOps::GetFilePath(PWCHAR filePath, ULONG numberOfElements, LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo) {
+    wcsncpy_s(filePath, numberOfElements, GET_GLOBALS_INSTANCE->RootDirectory().c_str(), wcslen(GET_GLOBALS_INSTANCE->RootDirectory().c_str()));
+    size_t unclen =  GET_GLOBALS_INSTANCE->UNCName().size(); //wcslen(UNCName);
+    if (unclen > 0 && _wcsnicmp(FileName, GET_GLOBALS_INSTANCE->UNCName().c_str(), unclen) == 0) {
         if (_wcsnicmp(FileName + unclen, L".", 1) != 0) {
             wcsncat_s(filePath, numberOfElements, FileName + unclen,
                       wcslen(FileName) - unclen);
@@ -45,11 +45,11 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
     DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition,&genericDesiredAccess, &fileAttributesAndFlags, &creationDisposition);
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
     std::wstring filename_str(FileName);
 
-    m_print->print(L"CreateFile : %s \n", filePath,FileName);
+    GET_PRINT_INSTANCE->print(L"CreateFile : %s \n", filePath,FileName);
 
     // Windows will automatically try to create and access different system
     // directories.
@@ -64,13 +64,13 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
 
 
-    m_print->print(L"\tShareMode = 0x%x\n", ShareAccess);
+    GET_PRINT_INSTANCE->print(L"\tShareMode = 0x%x\n", ShareAccess);
 
     CheckFlag(ShareAccess, FILE_SHARE_READ);
     CheckFlag(ShareAccess, FILE_SHARE_WRITE);
     CheckFlag(ShareAccess, FILE_SHARE_DELETE);
 
-    m_print->print(L"\tDesiredAccess = 0x%x\n", DesiredAccess);
+    GET_PRINT_INSTANCE->print(L"\tDesiredAccess = 0x%x\n", DesiredAccess);
 
     CheckFlag(DesiredAccess, GENERIC_READ);
     CheckFlag(DesiredAccess, GENERIC_WRITE);
@@ -99,7 +99,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
     if (fileAttr != INVALID_FILE_ATTRIBUTES && fileAttr & FILE_ATTRIBUTE_DIRECTORY) {
         if (CreateOptions & FILE_NON_DIRECTORY_FILE) {
-            m_print->print(L"\tCannot open a dir as a file\n");
+            GET_PRINT_INSTANCE->print(L"\tCannot open a dir as a file\n");
             return STATUS_FILE_IS_A_DIRECTORY;
         }
         DokanFileInfo->IsDirectory = TRUE;
@@ -118,7 +118,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
          DesiredAccess &= ~WRITE_OWNER;
     }
 
-    m_print->print(L"\tFlagsAndAttributes = 0x%x\n", fileAttributesAndFlags);
+    GET_PRINT_INSTANCE->print(L"\tFlagsAndAttributes = 0x%x\n", fileAttributesAndFlags);
 
     CheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_ARCHIVE);
     CheckFlag(fileAttributesAndFlags, FILE_ATTRIBUTE_COMPRESSED);
@@ -155,28 +155,28 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
     CheckFlag(fileAttributesAndFlags, SECURITY_EFFECTIVE_ONLY);
     CheckFlag(fileAttributesAndFlags, SECURITY_SQOS_PRESENT);
 
-    if (m_globals->CaseSensitive())
+    if (GET_GLOBALS_INSTANCE->CaseSensitive())
         fileAttributesAndFlags |= FILE_FLAG_POSIX_SEMANTICS;
 
     if (creationDisposition == CREATE_NEW) {
-        m_print->print(L"\tCREATE_NEW\n");
+        GET_PRINT_INSTANCE->print(L"\tCREATE_NEW\n");
     } else if (creationDisposition == OPEN_ALWAYS) {
-        m_print->print(L"\tOPEN_ALWAYS\n");
+        GET_PRINT_INSTANCE->print(L"\tOPEN_ALWAYS\n");
     } else if (creationDisposition == CREATE_ALWAYS) {
-        m_print->print(L"\tCREATE_ALWAYS\n");
+        GET_PRINT_INSTANCE->print(L"\tCREATE_ALWAYS\n");
     } else if (creationDisposition == OPEN_EXISTING) {
-        m_print->print(L"\tOPEN_EXISTING\n");
+        GET_PRINT_INSTANCE->print(L"\tOPEN_EXISTING\n");
     } else if (creationDisposition == TRUNCATE_EXISTING) {
-        m_print->print(L"\tTRUNCATE_EXISTING\n");
+        GET_PRINT_INSTANCE->print(L"\tTRUNCATE_EXISTING\n");
     } else {
-        m_print->print(L"\tUNKNOWN creationDisposition!\n");
+        GET_PRINT_INSTANCE->print(L"\tUNKNOWN creationDisposition!\n");
     }
 
-    if (m_globals->ImpersonateCallerUser()) {
+    if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser()) {
         userTokenHandle = DokanOpenRequestorToken(DokanFileInfo);
 
         if (userTokenHandle == INVALID_HANDLE_VALUE) {
-            m_print->print(L"  DokanOpenRequestorToken failed\n");
+            GET_PRINT_INSTANCE->print(L"  DokanOpenRequestorToken failed\n");
             // Should we return some error?
         }
     }
@@ -223,11 +223,11 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
         if (creationDisposition == CREATE_NEW || creationDisposition == OPEN_ALWAYS) {
 
-            if (m_globals->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
+            if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
                 // if g_ImpersonateCallerUser option is on, call the ImpersonateLoggedOnUser function.
                 if (!ImpersonateLoggedOnUser(userTokenHandle)) {
                     // handle the error if failed to impersonate
-                    m_print->print(L"\tImpersonateLoggedOnUser failed.\n");
+                    GET_PRINT_INSTANCE->print(L"\tImpersonateLoggedOnUser failed.\n");
                 }
             }
 
@@ -246,12 +246,12 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
                 error = GetLastError();
                 // Fail to create folder for OPEN_ALWAYS is not an error
                 if (error != ERROR_ALREADY_EXISTS || creationDisposition == CREATE_NEW) {
-                    m_print->print(L"\terror code = %d\n\n", error);
+                    GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
                     status = DokanNtStatusFromWin32(error);
                 }
             }
 
-            if (m_globals->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
+            if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
                 // Clean Up operation for impersonate
                 DWORD lastError = GetLastError();
                 if (status != STATUS_SUCCESS) //Keep the handle open for CreateFile
@@ -268,11 +268,11 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
                 return STATUS_NOT_A_DIRECTORY;
             }
 
-            if (m_globals->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
+            if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
                 // if g_ImpersonateCallerUser option is on, call the ImpersonateLoggedOnUser function.
                 if (!ImpersonateLoggedOnUser(userTokenHandle)) {
                     // handle the error if failed to impersonate
-                    m_print->print(L"\tImpersonateLoggedOnUser failed.\n");
+                    GET_PRINT_INSTANCE->print(L"\tImpersonateLoggedOnUser failed.\n");
                 }
             }
 
@@ -284,7 +284,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
             // FILE_FLAG_BACKUP_SEMANTICS is required for opening directory handles
             handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, OPEN_EXISTING, fileAttributesAndFlags | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
-            if (m_globals->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
+            if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
                 // Clean Up operation for impersonate
                 DWORD lastError = GetLastError();
                 CloseHandle(userTokenHandle);
@@ -294,7 +294,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
             if (handle == INVALID_HANDLE_VALUE) {
                 error = GetLastError();
-                m_print->print(L"\terror code = %d\n\n", error);
+                GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
 
 
                 status = DokanNtStatusFromWin32(error);
@@ -317,11 +317,11 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
         if (creationDisposition == TRUNCATE_EXISTING)
             genericDesiredAccess |= GENERIC_WRITE;
 
-        if (m_globals->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
+        if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
             // if g_ImpersonateCallerUser option is on, call the ImpersonateLoggedOnUser function.
             if (!ImpersonateLoggedOnUser(userTokenHandle)) {
                 // handle the error if failed to impersonate
-                m_print->print(L"\tImpersonateLoggedOnUser failed.\n");
+                GET_PRINT_INSTANCE->print(L"\tImpersonateLoggedOnUser failed.\n");
             }
         }
         if(creationDisposition == CREATE_NEW){
@@ -339,7 +339,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 //        }
 
         handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, creationDisposition, fileAttributesAndFlags, NULL);
-        if (m_globals->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
+        if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
             // Clean Up operation for impersonate
             DWORD lastError = GetLastError();
             CloseHandle(userTokenHandle);
@@ -349,7 +349,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
         if (handle == INVALID_HANDLE_VALUE || handle==NULL ) {
             error = GetLastError();
-            m_print->print(L"\terror code = %d\n\n", error);
+            GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
 
             status = DokanNtStatusFromWin32(error);
 
@@ -366,7 +366,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
                     creationDisposition == CREATE_ALWAYS) {
                 error = GetLastError();
                 if (error == ERROR_ALREADY_EXISTS) {
-                    m_print->print(L"\tOpen an already existing file\n");
+                    GET_PRINT_INSTANCE->print(L"\tOpen an already existing file\n");
                     // Open succeed but we need to inform the driver
                     // that the file open and not created by returning STATUS_OBJECT_NAME_COLLISION
                     status = STATUS_OBJECT_NAME_COLLISION;
@@ -375,24 +375,24 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
         }
     }
 
-    m_print->print(L"\n");
+    GET_PRINT_INSTANCE->print(L"\n");
     return status;
 }
 
  void DOKAN_CALLBACK FileOps::MirrorCloseFile(LPCWSTR FileName,  PDOKAN_FILE_INFO DokanFileInfo) {
      WCHAR filePath[DOKAN_MAX_PATH];
-     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+     GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
      if(DokanFileInfo->Context!=NULL && reinterpret_cast<HANDLE>(DokanFileInfo->Context) != INVALID_HANDLE_VALUE){
          DWORD flags;
          if(GetHandleInformation(reinterpret_cast<HANDLE>(DokanFileInfo->Context),&flags)!=0){
              if (DokanFileInfo->Context) {
-                 m_print->print(L"CloseFile: %s\n", filePath);
-                 m_print->print(L"\terror : not cleanuped file\n\n");
+                 GET_PRINT_INSTANCE->print(L"CloseFile: %s\n", filePath);
+                 GET_PRINT_INSTANCE->print(L"\terror : not cleanuped file\n\n");
                  CloseHandle((HANDLE)DokanFileInfo->Context);
                  DokanFileInfo->Context = reinterpret_cast<ULONG64>(INVALID_HANDLE_VALUE);
              } else {
-                 m_print->print(L"Close: %s\n\n", filePath);
+                 GET_PRINT_INSTANCE->print(L"Close: %s\n\n", filePath);
              }
          }else{
              DokanFileInfo->Context = reinterpret_cast<ULONG64>(INVALID_HANDLE_VALUE);
@@ -405,33 +405,33 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
  void DOKAN_CALLBACK FileOps::MirrorCleanup(LPCWSTR FileName,PDOKAN_FILE_INFO DokanFileInfo) {
      WCHAR filePath[DOKAN_MAX_PATH];
-     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+     GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
      if (DokanFileInfo->Context) {
-         m_print->print(L"Cleanup: %s\n\n", filePath);
+         GET_PRINT_INSTANCE->print(L"Cleanup: %s\n\n", filePath);
          CloseHandle((HANDLE)(DokanFileInfo->Context));
          DokanFileInfo->Context = 0;
      } else {
-         m_print->print(L"Cleanup: %s\n\tinvalid handle\n\n", filePath);
+         GET_PRINT_INSTANCE->print(L"Cleanup: %s\n\tinvalid handle\n\n", filePath);
      }
 
      if (DokanFileInfo->DeleteOnClose) {
          // Should already be deleted by CloseHandle
          // if open with FILE_FLAG_DELETE_ON_CLOSE
-         m_print->print(L"\tDeleteOnClose\n");
+         GET_PRINT_INSTANCE->print(L"\tDeleteOnClose\n");
          if (DokanFileInfo->IsDirectory) {
-             m_print->print(L"  DeleteDirectory ");
+             GET_PRINT_INSTANCE->print(L"  DeleteDirectory ");
              if (!RemoveDirectory(filePath)) {
-                 m_print->print(L"error code = %d\n\n", GetLastError());
+                 GET_PRINT_INSTANCE->print(L"error code = %d\n\n", GetLastError());
              } else {
-                 m_print->print(L"success\n\n");
+                 GET_PRINT_INSTANCE->print(L"success\n\n");
              }
          } else {
-             m_print->print(L"  DeleteFile ");
+             GET_PRINT_INSTANCE->print(L"  DeleteFile ");
              if (DeleteFile(filePath) == 0) {
-                 m_print->print(L" error code = %d\n\n", GetLastError());
+                 GET_PRINT_INSTANCE->print(L" error code = %d\n\n", GetLastError());
              } else {
-                 m_print->print(L"success\n\n");
+                 GET_PRINT_INSTANCE->print(L"success\n\n");
              }
          }
      }
@@ -443,17 +443,17 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorReadFile(LPCWSTR FileName, LPVOID Buffer,
      ULONG offset = (ULONG)Offset;
      BOOL opened = FALSE;
 
-     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+     GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-     m_print->print(L"ReadFile : %s\n", filePath);
+     GET_PRINT_INSTANCE->print(L"ReadFile : %s\n", filePath);
 
      if (!handle || handle == INVALID_HANDLE_VALUE) {
-         m_print->print(L"\tinvalid handle, cleanuped?\n");
+         GET_PRINT_INSTANCE->print(L"\tinvalid handle, cleanuped?\n");
          handle = CreateFile(filePath, GENERIC_READ, FILE_SHARE_READ, NULL,
                              OPEN_EXISTING, 0, NULL);
          if (handle == INVALID_HANDLE_VALUE) {
              DWORD error = GetLastError();
-             m_print->print(L"\tCreateFile error : %d\n\n", error);
+             GET_PRINT_INSTANCE->print(L"\tCreateFile error : %d\n\n", error);
              return DokanNtStatusFromWin32(error);
          }
          opened = TRUE;
@@ -463,7 +463,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorReadFile(LPCWSTR FileName, LPVOID Buffer,
      distanceToMove.QuadPart = Offset;
      if (!SetFilePointerEx(handle, distanceToMove, NULL, FILE_BEGIN)) {
          DWORD error = GetLastError();
-         m_print->print(L"\tseek error, offset = %d\n\n", offset);
+         GET_PRINT_INSTANCE->print(L"\tseek error, offset = %d\n\n", offset);
          if (opened)
              CloseHandle(handle);
          return DokanNtStatusFromWin32(error);
@@ -471,14 +471,14 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorReadFile(LPCWSTR FileName, LPVOID Buffer,
 
      if (!ReadFile(handle, Buffer, BufferLength, ReadLength, NULL)) {
          DWORD error = GetLastError();
-         m_print->print(L"\tread error = %u, buffer length = %d, read length = %d\n\n",
+         GET_PRINT_INSTANCE->print(L"\tread error = %u, buffer length = %d, read length = %d\n\n",
                   error, BufferLength, *ReadLength);
          if (opened)
              CloseHandle(handle);
          return DokanNtStatusFromWin32(error);
 
      } else {
-         m_print->print(L"\tByte to read: %d, Byte read %d, offset %d\n\n", BufferLength,
+         GET_PRINT_INSTANCE->print(L"\tByte to read: %d, Byte read %d, offset %d\n\n", BufferLength,
                   *ReadLength, offset);
      }
 
@@ -493,19 +493,19 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorWriteFile(LPCWSTR FileName, LPCVOID Buffe
     HANDLE handle = (HANDLE)DokanFileInfo->Context;
     BOOL opened = FALSE;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"WriteFile : %s, offset %I64d, length %d\n", filePath, Offset,
+    GET_PRINT_INSTANCE->print(L"WriteFile : %s, offset %I64d, length %d\n", filePath, Offset,
              NumberOfBytesToWrite);
 
     // reopen the file
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle, cleanuped?\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle, cleanuped?\n");
         handle = CreateFile(filePath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
                             OPEN_EXISTING, 0, NULL);
         if (handle == INVALID_HANDLE_VALUE) {
             DWORD error = GetLastError();
-            m_print->print(L"\tCreateFile error : %d\n\n", error);
+            GET_PRINT_INSTANCE->print(L"\tCreateFile error : %d\n\n", error);
             return DokanNtStatusFromWin32(error);
         }
         opened = TRUE;
@@ -517,7 +517,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorWriteFile(LPCWSTR FileName, LPCVOID Buffe
     fileSizeLow = GetFileSize(handle, &fileSizeHigh);
     if (fileSizeLow == INVALID_FILE_SIZE) {
         DWORD error = GetLastError();
-        m_print->print(L"\tcan not get a file size error = %d\n", error);
+        GET_PRINT_INSTANCE->print(L"\tcan not get a file size error = %d\n", error);
         if (opened)
             CloseHandle(handle);
         return DokanNtStatusFromWin32(error);
@@ -531,7 +531,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorWriteFile(LPCWSTR FileName, LPCVOID Buffe
         z.QuadPart = 0;
         if (!SetFilePointerEx(handle, z, NULL, FILE_END)) {
             DWORD error = GetLastError();
-            m_print->print(L"\tseek error, offset = EOF, error = %d\n", error);
+            GET_PRINT_INSTANCE->print(L"\tseek error, offset = EOF, error = %d\n", error);
             if (opened)
                 CloseHandle(handle);
             return DokanNtStatusFromWin32(error);
@@ -566,7 +566,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorWriteFile(LPCWSTR FileName, LPCVOID Buffe
         distanceToMove.QuadPart = Offset;
         if (!SetFilePointerEx(handle, distanceToMove, NULL, FILE_BEGIN)) {
             DWORD error = GetLastError();
-            m_print->print(L"\tseek error, offset = %I64d, error = %d\n", Offset, error);
+            GET_PRINT_INSTANCE->print(L"\tseek error, offset = %I64d, error = %d\n", Offset, error);
             if (opened)
                 CloseHandle(handle);
             return DokanNtStatusFromWin32(error);
@@ -576,14 +576,14 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorWriteFile(LPCWSTR FileName, LPCVOID Buffe
     if (!WriteFile(handle, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten,
                    NULL)) {
         DWORD error = GetLastError();
-        m_print->print(L"\twrite error = %u, buffer length = %d, write length = %d\n",
+        GET_PRINT_INSTANCE->print(L"\twrite error = %u, buffer length = %d, write length = %d\n",
                  error, NumberOfBytesToWrite, *NumberOfBytesWritten);
         if (opened)
             CloseHandle(handle);
         return DokanNtStatusFromWin32(error);
 
     } else {
-        m_print->print(L"\twrite %d, offset %I64d\n\n", *NumberOfBytesWritten, Offset);
+        GET_PRINT_INSTANCE->print(L"\twrite %d, offset %I64d\n\n", *NumberOfBytesWritten, Offset);
     }
 
     // close the file when it is reopened
@@ -596,12 +596,12 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFlushFileBuffers(LPCWSTR FileName, PDOKAN
     WCHAR filePath[DOKAN_MAX_PATH];
     HANDLE handle = (HANDLE)DokanFileInfo->Context;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName , DokanFileInfo);
 
-    m_print->print(L"FlushFileBuffers : %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"FlushFileBuffers : %s\n", filePath);
 
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_SUCCESS;
     }
 
@@ -609,7 +609,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFlushFileBuffers(LPCWSTR FileName, PDOKAN
         return STATUS_SUCCESS;
     } else {
         DWORD error = GetLastError();
-        m_print->print(L"\tflush error code = %d\n", error);
+        GET_PRINT_INSTANCE->print(L"\tflush error code = %d\n", error);
         return DokanNtStatusFromWin32(error);
     }
 }
@@ -619,28 +619,28 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileInformation( LPCWSTR FileName, LPB
     HANDLE handle = (HANDLE)DokanFileInfo->Context;
     BOOL opened = FALSE;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"GetFileInfo : %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"GetFileInfo : %s\n", filePath);
 
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle, cleanuped?\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle, cleanuped?\n");
         handle = CreateFile(filePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
         if (handle == INVALID_HANDLE_VALUE) {
             DWORD error = GetLastError();
-            m_print->print(L"\tCreateFile error : %d\n\n", error);
+            GET_PRINT_INSTANCE->print(L"\tCreateFile error : %d\n\n", error);
             return DokanNtStatusFromWin32(error);
         }
         opened = TRUE;
     }
 
     if (!GetFileInformationByHandle(handle, HandleFileInformation)) {
-        m_print->print(L"\terror code = %d\n", GetLastError());
+        GET_PRINT_INSTANCE->print(L"\terror code = %d\n", GetLastError());
 
         // FileName is a root directory
         // in this case, FindFirstFile can't get directory information
         if (wcslen(FileName) == 1) {
-            m_print->print(L"  root dir\n");
+            GET_PRINT_INSTANCE->print(L"  root dir\n");
             HandleFileInformation->dwFileAttributes = GetFileAttributes(filePath);
 
         } else {
@@ -649,7 +649,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileInformation( LPCWSTR FileName, LPB
             HANDLE findHandle = FindFirstFile(filePath, &find);
             if (findHandle == INVALID_HANDLE_VALUE) {
                 DWORD error = GetLastError();
-                m_print->print(L"\tFindFirstFile error code = %d\n\n", error);
+                GET_PRINT_INSTANCE->print(L"\tFindFirstFile error code = %d\n\n", error);
                 if (opened)
                     CloseHandle(handle);
                 return DokanNtStatusFromWin32(error);
@@ -661,16 +661,16 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetFileInformation( LPCWSTR FileName, LPB
             HandleFileInformation->ftLastWriteTime = find.ftLastWriteTime;
             HandleFileInformation->nFileSizeHigh = find.nFileSizeHigh;
             HandleFileInformation->nFileSizeLow = find.nFileSizeLow;
-            m_print->print(L"\tFindFiles OK, file size = %d\n", find.nFileSizeLow);
+            GET_PRINT_INSTANCE->print(L"\tFindFiles OK, file size = %d\n", find.nFileSizeLow);
             FindClose(findHandle);
         }
     } else {
-        m_print->print(L"\tGetFileInformationByHandle success, file size = %d\n",
+        GET_PRINT_INSTANCE->print(L"\tGetFileInformationByHandle success, file size = %d\n",
                  HandleFileInformation->nFileSizeLow);
     }
 
-    m_print->print(L"FILE ATTRIBUTE  = %d\n", HandleFileInformation->dwFileAttributes);
-    m_print->print(L"\tFileAttributes = 0x%x\n", HandleFileInformation->dwFileAttributes);
+    GET_PRINT_INSTANCE->print(L"FILE ATTRIBUTE  = %d\n", HandleFileInformation->dwFileAttributes);
+    GET_PRINT_INSTANCE->print(L"\tFileAttributes = 0x%x\n", HandleFileInformation->dwFileAttributes);
 
     CheckFlag(HandleFileInformation->dwFileAttributes, FILE_ATTRIBUTE_ARCHIVE);
     CheckFlag(HandleFileInformation->dwFileAttributes, FILE_ATTRIBUTE_COMPRESSED);
@@ -711,9 +711,9 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindFiles(LPCWSTR FileName, PFillFindData
     DWORD error;
     int count = 0;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"FindFiles : %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"FindFiles : %s\n", filePath);
 
     fileLen = wcslen(filePath);
     if (filePath[fileLen - 1] != L'\\') {
@@ -728,7 +728,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindFiles(LPCWSTR FileName, PFillFindData
 
     if (hFind == INVALID_HANDLE_VALUE) {
         error = GetLastError();
-        m_print->print(L"\tinvalid file handle. Error is %u\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\tinvalid file handle. Error is %u\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
@@ -745,11 +745,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindFiles(LPCWSTR FileName, PFillFindData
     FindClose(hFind);
 
     if (error != ERROR_NO_MORE_FILES) {
-        m_print->print(L"\tFindNextFile error. Error is %u\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\tFindNextFile error. Error is %u\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
-    m_print->print(L"\tFindFiles return %d entries in %s\n\n", count, filePath);
+    GET_PRINT_INSTANCE->print(L"\tFindFiles return %d entries in %s\n\n", count, filePath);
 
     return STATUS_SUCCESS;
 }
@@ -757,8 +757,8 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindFiles(LPCWSTR FileName, PFillFindData
 NTSTATUS DOKAN_CALLBACK FileOps::MirrorDeleteFile(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo) { WCHAR filePath[DOKAN_MAX_PATH];
     HANDLE handle = (HANDLE)DokanFileInfo->Context;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
-    m_print->print(L"DeleteFile %s - %d\n", filePath, DokanFileInfo->DeleteOnClose);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
+    GET_PRINT_INSTANCE->print(L"DeleteFile %s - %d\n", filePath, DokanFileInfo->DeleteOnClose);
 
     DWORD dwAttrib = GetFileAttributes(filePath);
 
@@ -783,9 +783,9 @@ NTSTATUS DOKAN_CALLBACK FileOps::DeleteDirectory(LPCWSTR FileName, PDOKAN_FILE_I
     size_t fileLen;
 
     ZeroMemory(filePath, sizeof(filePath));
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"DeleteDirectory %s - %d\n", filePath,
+    GET_PRINT_INSTANCE->print(L"DeleteDirectory %s - %d\n", filePath,
              DokanFileInfo->DeleteOnClose);
 
     if (!DokanFileInfo->DeleteOnClose)
@@ -805,7 +805,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::DeleteDirectory(LPCWSTR FileName, PDOKAN_FILE_I
 
     if (hFind == INVALID_HANDLE_VALUE) {
         DWORD error = GetLastError();
-        m_print->print(L"\tDeleteDirectory error code = %d\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\tDeleteDirectory error code = %d\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
@@ -813,7 +813,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::DeleteDirectory(LPCWSTR FileName, PDOKAN_FILE_I
         if (wcscmp(findData.cFileName, L"..") != 0 &&
                 wcscmp(findData.cFileName, L".") != 0) {
             FindClose(hFind);
-            m_print->print(L"\tDirectory is not empty: %s\n", findData.cFileName);
+            GET_PRINT_INSTANCE->print(L"\tDirectory is not empty: %s\n", findData.cFileName);
             return STATUS_DIRECTORY_NOT_EMPTY;
         }
     } while (FindNextFile(hFind, &findData) != 0);
@@ -823,7 +823,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::DeleteDirectory(LPCWSTR FileName, PDOKAN_FILE_I
     FindClose(hFind);
 
     if (error != ERROR_NO_MORE_FILES) {
-        m_print->print(L"\tDeleteDirectory error code = %d\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\tDeleteDirectory error code = %d\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
@@ -840,19 +840,19 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorMoveFile(LPCWSTR FileName, LPCWSTR NewFil
 
     PFILE_RENAME_INFO renameInfo = NULL;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
     if (wcslen(NewFileName) && NewFileName[0] != ':') {
-        GetFilePath(newFilePath, DOKAN_MAX_PATH, NewFileName);
+        GetFilePath(newFilePath, DOKAN_MAX_PATH, NewFileName,DokanFileInfo);
     } else {
         // For a stream rename, FileRenameInfo expect the FileName param without the filename
         // like :<stream name>:<stream type>
         wcsncpy_s(newFilePath, DOKAN_MAX_PATH, NewFileName, wcslen(NewFileName));
     }
 
-    m_print->print(L"MoveFile %s -> %s\n\n", filePath, newFilePath);
+    GET_PRINT_INSTANCE->print(L"MoveFile %s -> %s\n\n", filePath, newFilePath);
     handle = (HANDLE)DokanFileInfo->Context;
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
@@ -891,7 +891,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorMoveFile(LPCWSTR FileName, LPCWSTR NewFil
         return STATUS_SUCCESS;
     } else {
         DWORD error = GetLastError();
-        m_print->print(L"\tMoveFile error = %u\n", error);
+        GET_PRINT_INSTANCE->print(L"\tMoveFile error = %u\n", error);
         return DokanNtStatusFromWin32(error);
     }
 }
@@ -902,13 +902,13 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorLockFile(LPCWSTR FileName, LONGLONG ByteO
     LARGE_INTEGER offset;
     LARGE_INTEGER length;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"LockFile %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"LockFile %s\n", filePath);
 
     handle = (HANDLE)DokanFileInfo->Context;
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
@@ -918,11 +918,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorLockFile(LPCWSTR FileName, LONGLONG ByteO
     if (!LockFile(handle, offset.LowPart, offset.HighPart, length.LowPart,
                   length.HighPart)) {
         DWORD error = GetLastError();
-        m_print->print(L"\terror code = %d\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
-    m_print->print(L"\tsuccess\n\n");
+    GET_PRINT_INSTANCE->print(L"\tsuccess\n\n");
     return STATUS_SUCCESS;
 }
 
@@ -931,27 +931,27 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetEndOfFile(LPCWSTR FileName, LONGLONG B
     HANDLE handle;
     LARGE_INTEGER offset;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"SetEndOfFile %s, %I64d\n", filePath, ByteOffset);
+    GET_PRINT_INSTANCE->print(L"SetEndOfFile %s, %I64d\n", filePath, ByteOffset);
 
     handle = (HANDLE)DokanFileInfo->Context;
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
     offset.QuadPart = ByteOffset;
     if (!SetFilePointerEx(handle, offset, NULL, FILE_BEGIN)) {
         DWORD error = GetLastError();
-        m_print->print(L"\tSetFilePointer error: %d, offset = %I64d\n\n", error,
+        GET_PRINT_INSTANCE->print(L"\tSetFilePointer error: %d, offset = %I64d\n\n", error,
                  ByteOffset);
         return DokanNtStatusFromWin32(error);
     }
 
     if (!SetEndOfFile(handle)) {
         DWORD error = GetLastError();
-        m_print->print(L"\tSetEndOfFile error code = %d\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\tSetEndOfFile error code = %d\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
@@ -963,13 +963,13 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetAllocationSize(LPCWSTR FileName, LONGL
     HANDLE handle;
     LARGE_INTEGER fileSize;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"SetAllocationSize %s, %I64d\n", filePath, AllocSize);
+    GET_PRINT_INSTANCE->print(L"SetAllocationSize %s, %I64d\n", filePath, AllocSize);
 
     handle = (HANDLE)DokanFileInfo->Context;
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
@@ -978,20 +978,20 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetAllocationSize(LPCWSTR FileName, LONGL
             fileSize.QuadPart = AllocSize;
             if (!SetFilePointerEx(handle, fileSize, NULL, FILE_BEGIN)) {
                 DWORD error = GetLastError();
-                m_print->print(L"\tSetAllocationSize: SetFilePointer eror: %d, "
+                GET_PRINT_INSTANCE->print(L"\tSetAllocationSize: SetFilePointer eror: %d, "
                          L"offset = %I64d\n\n",
                          error, AllocSize);
                 return DokanNtStatusFromWin32(error);
             }
             if (!SetEndOfFile(handle)) {
                 DWORD error = GetLastError();
-                m_print->print(L"\tSetEndOfFile error code = %d\n\n", error);
+                GET_PRINT_INSTANCE->print(L"\tSetEndOfFile error code = %d\n\n", error);
                 return DokanNtStatusFromWin32(error);
             }
         }
     } else {
         DWORD error = GetLastError();
-        m_print->print(L"\terror code = %d\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
     return STATUS_SUCCESS;
@@ -1002,25 +1002,25 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileAttributes(LPCWSTR FileName, DWORD
 
     WCHAR filePath[DOKAN_MAX_PATH];
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"SetFileAttributes %s 0x%x\n", filePath, FileAttributes);
+    GET_PRINT_INSTANCE->print(L"SetFileAttributes %s 0x%x\n", filePath, FileAttributes);
 
     if (FileAttributes != 0) {
         if (!SetFileAttributes(filePath, FileAttributes)) {
             DWORD error = GetLastError();
-            m_print->print(L"\terror code = %d\n\n", error);
+            GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
             return DokanNtStatusFromWin32(error);
         }
     } else {
         // case FileAttributes == 0 :
         // MS-FSCC 2.6 File Attributes : There is no file attribute with the value 0x00000000
         // because a value of 0x00000000 in the FileAttributes field means that the file attributes for this file MUST NOT be changed when setting basic information for the file
-        m_print->print(L"Set 0 to FileAttributes means MUST NOT be changed. Didn't call "
+        GET_PRINT_INSTANCE->print(L"Set 0 to FileAttributes means MUST NOT be changed. Didn't call "
                  L"SetFileAttributes function. \n");
     }
 
-    m_print->print(L"\n");
+    GET_PRINT_INSTANCE->print(L"\n");
     return STATUS_SUCCESS;
 }
 
@@ -1028,24 +1028,24 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileTime(LPCWSTR FileName, CONST FILET
     WCHAR filePath[DOKAN_MAX_PATH];
     HANDLE handle;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"SetFileTime %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"SetFileTime %s\n", filePath);
 
     handle = (HANDLE)DokanFileInfo->Context;
 
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
     if (!SetFileTime(handle, CreationTime, LastAccessTime, LastWriteTime)) {
         DWORD error = GetLastError();
-        m_print->print(L"\terror code = %d\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
-    m_print->print(L"\n");
+    GET_PRINT_INSTANCE->print(L"\n");
     return STATUS_SUCCESS;
 }
 
@@ -1055,13 +1055,13 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorUnlockFile(LPCWSTR FileName, LONGLONG Byt
     LARGE_INTEGER length;
     LARGE_INTEGER offset;
 
-    GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+    GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-    m_print->print(L"UnlockFile %s\n", filePath);
+    GET_PRINT_INSTANCE->print(L"UnlockFile %s\n", filePath);
 
     handle = (HANDLE)DokanFileInfo->Context;
     if (!handle || handle == INVALID_HANDLE_VALUE) {
-        m_print->print(L"\tinvalid handle\n\n");
+        GET_PRINT_INSTANCE->print(L"\tinvalid handle\n\n");
         return STATUS_INVALID_HANDLE;
     }
 
@@ -1071,11 +1071,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorUnlockFile(LPCWSTR FileName, LONGLONG Byt
     if (!UnlockFile(handle, offset.LowPart, offset.HighPart, length.LowPart,
                     length.HighPart)) {
         DWORD error = GetLastError();
-        m_print->print(L"\terror code = %d\n\n", error);
+        GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
         return DokanNtStatusFromWin32(error);
     }
 
-    m_print->print(L"\tsuccess\n\n");
+    GET_PRINT_INSTANCE->print(L"\tsuccess\n\n");
     return STATUS_SUCCESS;
 }
 
@@ -1089,7 +1089,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetVolumeInformation(
     WCHAR volumeRoot[4];
     DWORD fsFlags = 0;
 
-    wcscpy_s(VolumeNameBuffer, VolumeNameSize, m_globals->volname().c_str());
+    wcscpy_s(VolumeNameBuffer, VolumeNameSize, GET_GLOBALS_INSTANCE->volname().c_str());
 
     if (VolumeSerialNumber)
         *VolumeSerialNumber = 0x19831116;
@@ -1098,11 +1098,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetVolumeInformation(
     if (FileSystemFlags) {
         *FileSystemFlags = FILE_SUPPORTS_REMOTE_STORAGE | FILE_UNICODE_ON_DISK |
                 FILE_PERSISTENT_ACLS | FILE_NAMED_STREAMS;
-        if (m_globals->CaseSensitive())
+        if (GET_GLOBALS_INSTANCE->CaseSensitive())
             *FileSystemFlags = FILE_CASE_SENSITIVE_SEARCH | FILE_CASE_PRESERVED_NAMES;
     }
 
-    volumeRoot[0] = m_globals->RootDirectory()[0]; //RootDirectory[0];
+    volumeRoot[0] = GET_GLOBALS_INSTANCE->RootDirectory()[0]; //RootDirectory[0];
     volumeRoot[1] = ':';
     volumeRoot[2] = '\\';
     volumeRoot[3] = '\0';
@@ -1115,21 +1115,21 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorGetVolumeInformation(
             *FileSystemFlags &= fsFlags;
 
         if (MaximumComponentLength) {
-            m_print->print(L"GetVolumeInformation: max component length %u\n",
+            GET_PRINT_INSTANCE->print(L"GetVolumeInformation: max component length %u\n",
                      *MaximumComponentLength);
         }
         if (FileSystemNameBuffer) {
-            m_print->print(L"GetVolumeInformation: file system name %s\n",
+            GET_PRINT_INSTANCE->print(L"GetVolumeInformation: file system name %s\n",
                      FileSystemNameBuffer);
         }
         if (FileSystemFlags) {
-            m_print->print(L"GetVolumeInformation: got file system flags 0x%08x,"
+            GET_PRINT_INSTANCE->print(L"GetVolumeInformation: got file system flags 0x%08x,"
                      L" returning 0x%08x\n",
                      fsFlags, *FileSystemFlags);
         }
     } else {
 
-        m_print->print(L"GetVolumeInformation: unable to query underlying fs,"
+        GET_PRINT_INSTANCE->print(L"GetVolumeInformation: unable to query underlying fs,"
                  L" using defaults.  Last error = %u\n",
                  GetLastError());
 
@@ -1165,7 +1165,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorDokanGetDiskFreeSpace(
     UNREFERENCED_PARAMETER(DokanFileInfo);
     WCHAR DriveLetter[3] = {'C', ':', 0};
     PWCHAR RootPathName;
-    std::wstring rootdir = m_globals->RootDirectory();
+    std::wstring rootdir = GET_GLOBALS_INSTANCE->RootDirectory();
 
     if (rootdir[0] == L'\\') { // UNC as Root
         RootPathName = &rootdir[0];
@@ -1178,7 +1178,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorDokanGetDiskFreeSpace(
                              (PULARGE_INTEGER)TotalNumberOfBytes,
                              (PULARGE_INTEGER)TotalNumberOfFreeBytes)) {
         DWORD error = GetLastError();
-        m_print->print(L"GetDiskFreeSpaceEx failed for path %ws", RootPathName);
+        GET_PRINT_INSTANCE->print(L"GetDiskFreeSpaceEx failed for path %ws", RootPathName);
         return DokanNtStatusFromWin32(error);
     }
     return STATUS_SUCCESS;
@@ -1224,15 +1224,15 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindStreams(LPCWSTR FileName, PFillFindSt
      DWORD error;
      int count = 0;
 
-     GetFilePath(filePath, DOKAN_MAX_PATH, FileName);
+     GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
-     m_print->print(L"FindStreams :%s\n", filePath);
+     GET_PRINT_INSTANCE->print(L"FindStreams :%s\n", filePath);
 
      hFind = FindFirstStreamW(filePath, FindStreamInfoStandard, &findData, 0);
 
      if (hFind == INVALID_HANDLE_VALUE) {
        error = GetLastError();
-       m_print->print(L"\tinvalid file handle. Error is %u\n\n", error);
+       GET_PRINT_INSTANCE->print(L"\tinvalid file handle. Error is %u\n\n", error);
        return DokanNtStatusFromWin32(error);
      }
 
@@ -1251,7 +1251,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindStreams(LPCWSTR FileName, PFillFindSt
      FindClose(hFind);
 
      if (!bufferFull) {
-       m_print->print(L"\tFindStreams returned %d entries in %s with "
+       GET_PRINT_INSTANCE->print(L"\tFindStreams returned %d entries in %s with "
                 L"STATUS_BUFFER_OVERFLOW\n\n",
                 count, filePath);
        // https://msdn.microsoft.com/en-us/library/windows/hardware/ff540364(v=vs.85).aspx
@@ -1259,11 +1259,11 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindStreams(LPCWSTR FileName, PFillFindSt
      }
 
      if (error != ERROR_HANDLE_EOF) {
-       m_print->print(L"\tFindNextStreamW error. Error is %u\n\n", error);
+       GET_PRINT_INSTANCE->print(L"\tFindNextStreamW error. Error is %u\n\n", error);
        return DokanNtStatusFromWin32(error);
      }
 
-     m_print->print(L"\tFindStreams return %d entries in %s\n\n", count, filePath);
+     GET_PRINT_INSTANCE->print(L"\tFindStreams return %d entries in %s\n\n", count, filePath);
 
      return STATUS_SUCCESS;
 }
@@ -1271,13 +1271,13 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindStreams(LPCWSTR FileName, PFillFindSt
 NTSTATUS DOKAN_CALLBACK FileOps::MirrorMounted(LPCWSTR MountPoint , PDOKAN_FILE_INFO DokanFileInfo) {
     UNREFERENCED_PARAMETER(DokanFileInfo);
 
-    m_print->print(L"Mounted\n");
+    GET_PRINT_INSTANCE->print(L"Mounted\n");
     return STATUS_SUCCESS;
 }
 
 NTSTATUS DOKAN_CALLBACK FileOps::MirrorUnmounted(PDOKAN_FILE_INFO DokanFileInfo) {
     UNREFERENCED_PARAMETER(DokanFileInfo);
 
-    m_print->print(L"Unmounted\n");
+    GET_PRINT_INSTANCE->print(L"Unmounted\n");
     return STATUS_SUCCESS;
 }

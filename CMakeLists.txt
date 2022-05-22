@@ -51,7 +51,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Source groups
 ################################################################################
 set(Sources
-    "context.h"
+    "nodes.h"
+    "Context.h"
     "globals.h "
     "globals.cpp"
     "mirror.cpp"
