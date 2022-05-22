@@ -46,6 +46,9 @@ class Globals{
     const std::wstring &volname() const;
     void setVolname(const std::wstring &newVolname);
 
+    bool HasSeSecurityPrivilege() const;
+    void setHasSeSecurityPrivilege(bool newHasSeSecurityPrivilege);
+
 private:
     std::wstring m_RootDirectory;
     std::wstring m_MountPoint ;
