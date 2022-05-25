@@ -18,6 +18,30 @@ Globals::Globals(std::wstring RootDirectory, std::wstring MountPoint, std::wstri
     m_UNCName = UNCName;
 }
 
+Globals::Globals(const Globals &other)
+{
+     m_RootDirectory = other.m_RootDirectory;
+     m_MountPoint  = other.m_MountPoint;
+     m_UNCName = other.m_UNCName;
+     m_volname = other.m_volname;
+     m_CaseSensitive = other.m_CaseSensitive;
+     m_ImpersonateCallerUser = other.m_ImpersonateCallerUser;
+     m_HasSeSecurityPrivilege = other.m_HasSeSecurityPrivilege;
+}
+
+Globals::Globals(const std::shared_ptr<Globals> &other)
+{
+    m_RootDirectory = other->m_RootDirectory;
+    m_MountPoint  = other->m_MountPoint;
+    m_UNCName = other->m_UNCName;
+    m_volname = other->m_volname;
+    m_CaseSensitive = other->m_CaseSensitive;
+    m_ImpersonateCallerUser = other->m_ImpersonateCallerUser;
+    m_HasSeSecurityPrivilege = other->m_HasSeSecurityPrivilege;
+}
+
+
+
 const std::wstring &Globals::RootDirectory() const
 {
     return m_RootDirectory;

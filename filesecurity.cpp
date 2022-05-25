@@ -238,6 +238,8 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorSetFileSecurity(LPCWSTR FileName, PSECURI
         NTSTATUS stat;
 
         stat = GET_WINSEC_INSTANCE->RtlpSetSecurityObject(NULL,*SecurityInformation, SecurityDescriptor,&heapSecurityDescriptor, 0 ,&memfs_mapping, 0);
+        GET_WINSEC_INSTANCE->printSD(SecurityDescriptor,6);
+
         if(stat != ERROR_SUCCESS){
             LocalFree(heapSecurityDescriptor);
 //          HeapFree(pHeap, 0, heapSecurityDescriptor);

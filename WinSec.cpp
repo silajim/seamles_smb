@@ -257,15 +257,17 @@ ULONG WinSec::GetNotElevatedDefaultDacl(PACL* DefaultDacl)
                 return GetLastError();
             }
 
+            printACL(p->DefaultDacl);
+
             *DefaultDacl = (PACL)LocalAlloc(LPTR,p->DefaultDacl->AclSize);
             memcpy(*DefaultDacl,p->DefaultDacl,p->DefaultDacl->AclSize);
 
             m_print->print(L"Is DACL valid  %d\n" ,IsValidAcl(*DefaultDacl));
 
             LocalFree(p);
-
-            CloseHandle(tlt.LinkedToken);
         }
+
+
     }
 
     return err;
@@ -354,6 +356,42 @@ ULONG WinSec::GetNotElevatedSIDS(PSID *owner, PSID *group)
     return err;
 }
 
+BOOL WinSec::get_sid(const wchar_t *name, PSID *ppsid)
+{
+  SID_NAME_USE sid_use;
+  DWORD sid_size = 0;
+  DWORD dom_size = 0;
+  wchar_t *domain;
+
+  *ppsid = 0;
+  if(LookupAccountNameW(0, name, 0, &sid_size, 0, &dom_size, &sid_use) == 0) {
+    if(GetLastError() != ERROR_INSUFFICIENT_BUFFER)return FALSE;
+  }
+
+  *ppsid = (SID *)LocalAlloc( LMEM_FIXED, sid_size);
+  domain = (wchar_t *)LocalAlloc( LMEM_FIXED, dom_size);
+  if( (*ppsid == 0) || (domain == 0))
+  {
+    if(*ppsid)
+      LocalFree((HLOCAL)*ppsid);
+    if(domain)
+      LocalFree((HLOCAL)domain);
+    *ppsid = 0;
+    return FALSE;
+  }
+
+  if(LookupAccountNameW(0, name, *ppsid, &sid_size, domain, &dom_size, &sid_use) == 0)
+  {
+    LocalFree((HLOCAL)*ppsid);
+    LocalFree((HLOCAL)domain);
+    *ppsid = 0;
+    return FALSE;
+  }
+
+  LocalFree((HLOCAL)domain);
+  return TRUE;
+}
+
 NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescriptor)
 {
     PSID owner=NULL, group=NULL;
@@ -361,17 +399,12 @@ NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescr
     PACL dacl;
     ULONG numofaclEntries;
 
-    GetNotElevatedDefaultDacl(&dacl);
+//    GetNotElevatedDefaultDacl(&dacl);
 
-    PEXPLICIT_ACCESS_W peacces;
+//    printACL(dacl);
 
     ULONG err;
 
-    err = GetExplicitEntriesFromAclW(dacl,&numofaclEntries,&peacces);
-
-    if(err!=ERROR_SUCCESS){
-        return err;
-    }
 
     err =  GetNotElevatedSIDS(&owner, &group);
     m_print->print(L"Get sids, %d \n",err);
@@ -385,6 +418,80 @@ NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescr
 
     valid = IsValidSid(group);
     m_print->print(L"Group sid valid %d \n",valid);
+
+    int NUM_OF_ACES = 6;
+
+    DWORD cbAcl = sizeof(ACL) +  ((sizeof(ACCESS_ALLOWED_ACE)) * NUM_OF_ACES);
+//    dacl = (PACL)LocalAlloc(LPTR, cbAcl);
+//    InitializeAcl(dacl,cbAcl,ACL_REVISION);
+    PSID ntauth;
+    PSID admins;
+    SID_IDENTIFIER_AUTHORITY SIDAuth = SECURITY_NT_AUTHORITY;
+    AllocateAndInitializeSid( &SIDAuth, 1,SECURITY_LOCAL_SYSTEM_RID , DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &ntauth);
+    AllocateAndInitializeSid( &SIDAuth, 2,SECURITY_BUILTIN_DOMAIN_RID , DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &admins);
+    printSid(ntauth);
+    printSid(admins);
+    printSid(owner);
+    PSID psid2;
+    DWORD cbSid;
+    SID_NAME_USE nameuse;
+//    get_sid(L"NT AUTHORITY/SYSTEM",&psid2);
+//     printSid(psid2);
+//    LookupAccountNameW(NULL,L"NT AUTHORITY/SYSTEM",NULL,&cbSid,NULL,NULL,&nameuse);
+
+
+//    for (int i = 0; i < NUM_OF_ACES; i++)
+//        {
+//            cbAcl += GetLengthSid(psids[i]) - sizeof(DWORD);
+//        }
+        cbAcl += GetLengthSid(ntauth) - sizeof(DWORD);
+        cbAcl += GetLengthSid(ntauth) - sizeof(DWORD);
+        cbAcl += GetLengthSid(admins) - sizeof(DWORD);
+        cbAcl += GetLengthSid(admins) - sizeof(DWORD);
+        cbAcl += GetLengthSid(owner) - sizeof(DWORD);
+        cbAcl += GetLengthSid(owner) - sizeof(DWORD);
+        // Align cbAcl to a DWORD.
+        cbAcl = (cbAcl + (sizeof(DWORD) - 1)) & 0xfffffffc;
+
+        dacl = (PACL)LocalAlloc(LPTR, cbAcl);
+        InitializeAcl(dacl,cbAcl,ACL_REVISION);
+
+
+        AddAccessAllowedAceEx(dacl,ACL_REVISION ,3 ,DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,ntauth);
+        AddAccessAllowedAce(dacl,ACL_REVISION , DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,ntauth);
+        AddAccessAllowedAceEx(dacl,ACL_REVISION ,3 ,DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,admins);
+        AddAccessAllowedAce(dacl,ACL_REVISION , DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,admins);
+//        AddAccessAllowedAce(dacl,ACL_REVISION , DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,owner);
+        AddAccessAllowedAceEx(dacl,ACL_REVISION ,3 ,DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,owner);
+        AddAccessAllowedAce(dacl,ACL_REVISION ,  FILE_GENERIC_READ | FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | SYNCHRONIZE ,owner);
+
+
+
+    printACL(dacl);
+//    FreeSid(psid);
+
+//    DWORD size;
+//    CreateWellKnownSid(WinAccountDomainAdminsSid,NULL,psid,&size);
+//    AddAccessAllowedAce(dacl,ACL_REVISION , DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,psid);
+//    FreeSid(psid);
+
+//    ACCESS_ALLOWED_ACE* ace;
+//    for (int i=0; i<(*dacl).AceCount; i++) {
+//        if(GetAce(dacl, i, (PVOID*)&ace)){
+//            ace->Mask =  DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE;
+//        }
+//    }
+
+
+//    AddAccessAllowedAce(dacl,ACL_REVISION , 0x1200a9 ,owner);
+
+    PEXPLICIT_ACCESS_W peacces;
+    err = GetExplicitEntriesFromAclW(dacl,&numofaclEntries,&peacces);
+
+    if(err!=ERROR_SUCCESS){
+        return err;
+    }
+
 
     TRUSTEEW towner,tgroup;
     BuildTrusteeWithSidW (&towner,owner);
@@ -467,6 +574,11 @@ void WinSec::printSD(PSECURITY_DESCRIPTOR sd, int num)
     if(valid){
         ConvertSecurityDescriptorToStringSecurityDescriptorW(sd,SDDL_REVISION_1,OWNER_SECURITY_INFORMATION | ATTRIBUTE_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | LABEL_SECURITY_INFORMATION | SACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION |  PROTECTED_SACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION |  UNPROTECTED_SACL_SECURITY_INFORMATION   , &str , NULL);
         m_print->print(L"Security Descriptor %d string %s\n",num,str);
+        BOOL dpresent,defaulted;
+        PACL acl;
+        GetSecurityDescriptorDacl(sd,&dpresent,&acl,&defaulted);
+        if(dpresent)
+            printACL(acl);
     }else{
         m_print->print(L"Security Descriptor %d INVALID\n",num);
     }
@@ -482,5 +594,93 @@ bool WinSec::isSelfRelative(PSECURITY_DESCRIPTOR sd)
 
     return sdc & SE_SELF_RELATIVE;
 }
+
+
+void WinSec::printACL(PACL pdacl)
+{
+    using namespace std;
+    ACCESS_ALLOWED_ACE* ace;
+    wchar_t* oname = new TCHAR[512];
+    DWORD namelen;
+    wchar_t* doname = new TCHAR[512];
+    DWORD domainnamelen;
+    SID_NAME_USE peUse;
+    SID *sid;
+    unsigned long i, mask;
+    char *stringsid;
+    wcout<<"---------------------------------------------------------"<<std::endl;
+    for (int i=0; i<(*pdacl).AceCount; i++) {
+        int c=1;
+        BOOL b = GetAce(pdacl, i, (PVOID*)&ace);
+        //SID *sid = (SID *) ace->SidStart;
+        if (((ACCESS_ALLOWED_ACE *) ace)->Header.AceType == ACCESS_ALLOWED_ACE_TYPE) {
+            sid = (SID *) &((ACCESS_ALLOWED_ACE *) ace)->SidStart;
+            LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
+            wcout<<"ASID: " << doname << "/" << oname <<std::endl;
+            mask = ((ACCESS_ALLOWED_ACE *) ace)->Mask;
+        }
+        else if (((ACCESS_DENIED_ACE *) ace)->Header.AceType == ACCESS_DENIED_ACE_TYPE) {
+            sid = (SID *) &((ACCESS_DENIED_ACE *) ace)->SidStart;
+            LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
+            wcout<<"DSID: " << doname << "/" << oname <<std::endl;
+            mask = ((ACCESS_DENIED_ACE *) ace)->Mask;
+        }
+        else printf("Other ACE\n");
+
+        wcout<<"ACE: mask:" << ace->Mask << " sidStart:" << ace->SidStart << " header type=" << ace->Header.AceType << " header flags=" << ace->Header.AceFlags <<std::endl;
+        if (DELETE & ace->Mask) {
+            wcout<< " DELETE" << std::endl;
+        }
+        if (FILE_GENERIC_READ & ace->Mask) {
+            wcout<< " FILE_GENERIC_READ" << std::endl;
+        }
+        if (FILE_GENERIC_WRITE & ace->Mask) {
+            wcout<< " FILE_GENERIC_WRITE" << std::endl;
+        }
+        if (FILE_GENERIC_EXECUTE & ace->Mask) {
+            wcout<< " FILE_GENERIC_EXECUTE" << std::endl;
+        }
+        if (GENERIC_READ & ace->Mask) {
+            wcout<< " GENERIC_READ" << std::endl;
+        }
+        if (GENERIC_WRITE & ace->Mask) {
+            wcout<< " GENERIC_WRITE" << std::endl;
+        }
+        if (GENERIC_EXECUTE & ace->Mask) {
+            wcout<< " GENERIC_EXECUTE" << std::endl;
+        }
+        if (GENERIC_ALL & ace->Mask) {
+            wcout<< " GENERIC_ALL" << std::endl;
+        }
+        if (READ_CONTROL & ace->Mask) {
+            wcout<< " READ_CONTROL" << std::endl;
+        }
+        if (WRITE_DAC & ace->Mask) {
+            wcout<< " WRITE_DAC" << std::endl;
+        }
+        if (WRITE_OWNER & ace->Mask) {
+            wcout<< " WRITE_OWNER" << std::endl;
+        }
+        if (SYNCHRONIZE & ace->Mask) {
+            wcout<< " SYNCHRONIZE" << std::endl;
+        }
+        std::wcout.flush();
+    }
+    wcout<<"---------------------------------------------------------"<<std::endl;
+}
+
+void WinSec::printSid(PSID sid)
+{
+    using namespace std;
+    SID_NAME_USE peUse;
+    wchar_t* oname = new TCHAR[512];
+    DWORD namelen;
+    wchar_t* doname = new TCHAR[512];
+    DWORD domainnamelen;
+    LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
+    wcout<<"SID: " << doname << "/" << oname <<std::endl;
+
+}
+
 
 

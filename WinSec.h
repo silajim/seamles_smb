@@ -33,6 +33,9 @@ private:
     NTSTATUS RtlCreateSecurityDescriptorRelative(PISECURITY_DESCRIPTOR_RELATIVE SecurityDescriptor, ULONG Revision);
     ULONG BOOL_TO_ERROR(BOOL f);
     ULONG GetNotElevatedDefaultDacl(PACL *DefaultDacl);
+    void printACL(PACL pdacl);
+    void printSid(PSID sid);
+    BOOL get_sid(const wchar_t *name, PSID *ppsid);
 };
 
 #endif // WINSEC_H
