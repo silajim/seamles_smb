@@ -20,6 +20,8 @@ public:
 
  void print(LPCWSTR format, ...);
 
+ bool DebugMode() const;
+
 private:
  bool m_UseStdErr;
  bool m_DebugMode;

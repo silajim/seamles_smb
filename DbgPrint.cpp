@@ -34,3 +34,8 @@ void DbgPrint::print(LPCWSTR format, ...) {
             fflush(stderr);
     }
 }
+
+bool DbgPrint::DebugMode() const
+{
+    return m_DebugMode;
+}

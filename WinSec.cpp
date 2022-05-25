@@ -577,7 +577,7 @@ void WinSec::printSD(PSECURITY_DESCRIPTOR sd, int num)
         BOOL dpresent,defaulted;
         PACL acl;
         GetSecurityDescriptorDacl(sd,&dpresent,&acl,&defaulted);
-        if(dpresent)
+        if(dpresent && m_print->DebugMode())
             printACL(acl);
     }else{
         m_print->print(L"Security Descriptor %d INVALID\n",num);
@@ -608,7 +608,7 @@ void WinSec::printACL(PACL pdacl)
     SID *sid;
     unsigned long i, mask;
     char *stringsid;
-    wcout<<"---------------------------------------------------------"<<std::endl;
+    m_print->print(L"---------------------------------------------------------\n");
     for (int i=0; i<(*pdacl).AceCount; i++) {
         int c=1;
         BOOL b = GetAce(pdacl, i, (PVOID*)&ace);
@@ -616,57 +616,59 @@ void WinSec::printACL(PACL pdacl)
         if (((ACCESS_ALLOWED_ACE *) ace)->Header.AceType == ACCESS_ALLOWED_ACE_TYPE) {
             sid = (SID *) &((ACCESS_ALLOWED_ACE *) ace)->SidStart;
             LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
-            wcout<<"ASID: " << doname << "/" << oname <<std::endl;
+             m_print->print(L"ASID %s/%s\n",doname,oname);
+//            wcout<<"ASID: " << doname << "/" << oname <<std::endl;
             mask = ((ACCESS_ALLOWED_ACE *) ace)->Mask;
         }
         else if (((ACCESS_DENIED_ACE *) ace)->Header.AceType == ACCESS_DENIED_ACE_TYPE) {
             sid = (SID *) &((ACCESS_DENIED_ACE *) ace)->SidStart;
             LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
-            wcout<<"DSID: " << doname << "/" << oname <<std::endl;
+             m_print->print(L"DSID %s/%s\n",doname,oname);
             mask = ((ACCESS_DENIED_ACE *) ace)->Mask;
         }
-        else printf("Other ACE\n");
+        else  m_print->print(L"Other ACE\n");
 
+        m_print->print(L"ACE: mask:%d sidStart:%d header type=%d header flags=%d\n",ace->Mask ,ace->SidStart, ace->Header.AceType, ace->Header.AceFlags );
         wcout<<"ACE: mask:" << ace->Mask << " sidStart:" << ace->SidStart << " header type=" << ace->Header.AceType << " header flags=" << ace->Header.AceFlags <<std::endl;
         if (DELETE & ace->Mask) {
-            wcout<< " DELETE" << std::endl;
+            m_print->print(L" DELETE\n" );
         }
         if (FILE_GENERIC_READ & ace->Mask) {
-            wcout<< " FILE_GENERIC_READ" << std::endl;
+            m_print->print(L" FILE_GENERIC_READ\n");
         }
         if (FILE_GENERIC_WRITE & ace->Mask) {
-            wcout<< " FILE_GENERIC_WRITE" << std::endl;
+            m_print->print(L" FILE_GENERIC_WRITE");
         }
         if (FILE_GENERIC_EXECUTE & ace->Mask) {
-            wcout<< " FILE_GENERIC_EXECUTE" << std::endl;
+            m_print->print(L" FILE_GENERIC_EXECUTE");
         }
         if (GENERIC_READ & ace->Mask) {
-            wcout<< " GENERIC_READ" << std::endl;
+            m_print->print(L" GENERIC_READ\n");
         }
         if (GENERIC_WRITE & ace->Mask) {
-            wcout<< " GENERIC_WRITE" << std::endl;
+            m_print->print(L" GENERIC_WRITE\n");
         }
         if (GENERIC_EXECUTE & ace->Mask) {
-            wcout<< " GENERIC_EXECUTE" << std::endl;
+            m_print->print(L" GENERIC_EXECUTE\n");
         }
         if (GENERIC_ALL & ace->Mask) {
-            wcout<< " GENERIC_ALL" << std::endl;
+            m_print->print(L" GENERIC_ALL\n");
         }
         if (READ_CONTROL & ace->Mask) {
-            wcout<< " READ_CONTROL" << std::endl;
+            m_print->print(L" READ_CONTROL\n");
         }
         if (WRITE_DAC & ace->Mask) {
-            wcout<< " WRITE_DAC" << std::endl;
+            m_print->print(L" WRITE_DAC\n");
         }
         if (WRITE_OWNER & ace->Mask) {
-            wcout<< " WRITE_OWNER" << std::endl;
+            m_print->print(L" WRITE_OWNER\n");
         }
         if (SYNCHRONIZE & ace->Mask) {
-            wcout<< " SYNCHRONIZE" << std::endl;
+            m_print->print(L" SYNCHRONIZE\n");
         }
         std::wcout.flush();
     }
-    wcout<<"---------------------------------------------------------"<<std::endl;
+    m_print->print(L"---------------------------------------------------------\n");
 }
 
 void WinSec::printSid(PSID sid)
