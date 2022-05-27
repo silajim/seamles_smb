@@ -539,7 +539,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         std::istream is(&filer);
         boost::archive::binary_iarchive ir(is, boost::archive::no_header);
 
-        ir >> m_nodes;
+        ir >> m_nodes->_filenodes;
     }
 
     DokanInit();
@@ -617,7 +617,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     std::ostream os(&file);
     boost::archive::binary_oarchive ar(os, boost::archive::no_header);
 
-    ar << m_nodes;
+    ar << m_nodes->_filenodes;
 
     file.close();
 

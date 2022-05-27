@@ -79,9 +79,9 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
          DesiredAccess &= ~WRITE_OWNER;
     }
 
-    if(!(DesiredAccess & SYNCHRONIZE)){
-        DesiredAccess|= SYNCHRONIZE;
-    }
+//    if(!(DesiredAccess & SYNCHRONIZE)){
+//        DesiredAccess|= SYNCHRONIZE;
+//    }
 
     if(!(DesiredAccess & ACCESS_SYSTEM_SECURITY)){
         DesiredAccess &= ~ACCESS_SYSTEM_SECURITY;
