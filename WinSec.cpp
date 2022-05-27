@@ -568,6 +568,10 @@ NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescr
 
 void WinSec::printSD(PSECURITY_DESCRIPTOR sd, int num)
 {
+
+    if(sd==NULL)
+        return;
+
     LPWSTR str;
 
     BOOL valid = IsValidSecurityDescriptor(sd);
@@ -629,7 +633,6 @@ void WinSec::printACL(PACL pdacl)
         else  m_print->print(L"Other ACE\n");
 
         m_print->print(L"ACE: mask:%d sidStart:%d header type=%d header flags=%d\n",ace->Mask ,ace->SidStart, ace->Header.AceType, ace->Header.AceFlags );
-        wcout<<"ACE: mask:" << ace->Mask << " sidStart:" << ace->SidStart << " header type=" << ace->Header.AceType << " header flags=" << ace->Header.AceFlags <<std::endl;
         if (DELETE & ace->Mask) {
             m_print->print(L" DELETE\n" );
         }

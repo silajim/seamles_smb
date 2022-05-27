@@ -525,7 +525,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     dokanOperations.Mounted = &FileOps::MirrorMounted;
 
     //    std::shared_ptr<Context> m_nodes;
-    m_nodes->_filenodes = std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
+//    m_nodes->_filenodes = std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
 
     dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(context.get());
 
@@ -539,7 +539,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         std::istream is(&filer);
         boost::archive::binary_iarchive ir(is, boost::archive::no_header);
 
-        ir >> m_nodes->_filenodes;
+        ir >> m_nodes;
     }
 
     DokanInit();
@@ -617,7 +617,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     std::ostream os(&file);
     boost::archive::binary_oarchive ar(os, boost::archive::no_header);
 
-    ar << m_nodes->_filenodes;
+    ar << m_nodes;
 
     file.close();
 

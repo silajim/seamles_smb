@@ -43,7 +43,6 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
 //    std::wcout << "Create File, FILENAME " << std::wstring(FileName) << std::endl;
 
-    DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition,&genericDesiredAccess, &fileAttributesAndFlags, &creationDisposition);
 
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
 
@@ -61,7 +60,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
 //    PrintUserName(DokanFileInfo);
 
-
+    GET_WINSEC_INSTANCE->printSD(SecurityContext->AccessState.SecurityDescriptor,7);
 
 
     GET_PRINT_INSTANCE->print(L"\tShareMode = 0x%x\n", ShareAccess);
@@ -71,6 +70,22 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
     CheckFlag(ShareAccess, FILE_SHARE_DELETE);
 
     GET_PRINT_INSTANCE->print(L"\tDesiredAccess = 0x%x\n", DesiredAccess);
+
+    if(DesiredAccess & WRITE_DAC){
+        DesiredAccess &= ~WRITE_DAC;
+    }
+
+    if(DesiredAccess & WRITE_OWNER ){
+         DesiredAccess &= ~WRITE_OWNER;
+    }
+
+    if(!(DesiredAccess & SYNCHRONIZE)){
+        DesiredAccess|= SYNCHRONIZE;
+    }
+
+    if(!(DesiredAccess & ACCESS_SYSTEM_SECURITY)){
+        DesiredAccess &= ~ACCESS_SYSTEM_SECURITY;
+    }
 
     CheckFlag(DesiredAccess, GENERIC_READ);
     CheckFlag(DesiredAccess, GENERIC_WRITE);
@@ -110,12 +125,12 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 
     ShareAccess = FILE_SHARE_READ | FILE_SHARE_WRITE  | FILE_SHARE_DELETE;
 
-    if(DesiredAccess & WRITE_DAC){
-        DesiredAccess &= ~WRITE_DAC;
-    }
 
-    if(DesiredAccess & WRITE_OWNER ){
-         DesiredAccess &= ~WRITE_OWNER;
+
+    DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition,&genericDesiredAccess, &fileAttributesAndFlags, &creationDisposition);
+
+    if(fileAttributesAndFlags & FILE_FLAG_OPEN_REPARSE_POINT){
+        fileAttributesAndFlags &= ~FILE_FLAG_OPEN_REPARSE_POINT;
     }
 
     GET_PRINT_INSTANCE->print(L"\tFlagsAndAttributes = 0x%x\n", fileAttributesAndFlags);
@@ -155,6 +170,8 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
     CheckFlag(fileAttributesAndFlags, SECURITY_EFFECTIVE_ONLY);
     CheckFlag(fileAttributesAndFlags, SECURITY_SQOS_PRESENT);
 
+
+
     if (GET_GLOBALS_INSTANCE->CaseSensitive())
         fileAttributesAndFlags |= FILE_FLAG_POSIX_SEMANTICS;
 
@@ -180,6 +197,8 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
             // Should we return some error?
         }
     }
+
+     DokanMapKernelToUserCreateFileFlags(DesiredAccess, FileAttributes, CreateOptions, CreateDisposition,&genericDesiredAccess, &fileAttributesAndFlags, &creationDisposition);
 
     // declare a security descriptor
 
@@ -338,7 +357,7 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
 //            securityAttrib.lpSecurityDescriptor=&SD;
 //        }
 
-        handle = CreateFile(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, creationDisposition, fileAttributesAndFlags, NULL);
+        handle = CreateFileW(filePath, genericDesiredAccess, ShareAccess, &securityAttrib, creationDisposition, fileAttributesAndFlags, NULL);
         if (GET_GLOBALS_INSTANCE->ImpersonateCallerUser() && userTokenHandle != INVALID_HANDLE_VALUE) {
             // Clean Up operation for impersonate
             DWORD lastError = GetLastError();
