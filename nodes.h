@@ -44,5 +44,20 @@ struct Nodes{
             ar &_filenodes;
         }
 
+        std::shared_ptr<filenode> findFileNode(std::wstring fname);
+
 };
+
+inline std::shared_ptr<filenode> Nodes::findFileNode(std::wstring fname)
+{
+    if(_filenodes->empty())
+        return nullptr;
+
+    for(auto it  = _filenodes->begin();it!=_filenodes->end();++it){
+        if(it->second->_fileName == fname)
+            return it->second;
+    }
+
+    return nullptr;
+}
 #endif // NODES_H

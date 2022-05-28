@@ -136,6 +136,7 @@ class filenode {
 //  std::atomic<DWORD> attributes = 0;
   bool is_directory = false;
   DWORD attributes = 0;
+  std::wstring _fileName;
 //  LONGLONG fileindex = 0;
 //  std::shared_ptr<filenode> main_stream;
 
@@ -171,7 +172,7 @@ class filenode {
 
 //  std::mutex _fileName_mutex;
   // _fileName_mutex need to be aquired
-  std::wstring _fileName;
+
 };
 
 #endif  // FILENODE_H_

@@ -890,19 +890,13 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorMoveFile(LPCWSTR FileName, LPCWSTR NewFil
     }
     ZeroMemory(renameInfo, bufferSize);
 
-    renameInfo->ReplaceIfExists =
-            ReplaceIfExisting
-            ? TRUE
-            : FALSE; // some warning about converting BOOL to BOOLEAN
+    renameInfo->ReplaceIfExists =  ReplaceIfExisting ? TRUE: FALSE; // some warning about converting BOOL to BOOLEAN
     renameInfo->RootDirectory = NULL; // hope it is never needed, shouldn't be
-    renameInfo->FileNameLength =
-            (DWORD)newFilePathLen *
-            sizeof(newFilePath[0]); // they want length in bytes
+    renameInfo->FileNameLength =    (DWORD)newFilePathLen *sizeof(newFilePath[0]); // they want length in bytes
 
     wcscpy_s(renameInfo->FileName, newFilePathLen + 1, newFilePath);
 
-    result = SetFileInformationByHandle(handle, FileRenameInfo, renameInfo,
-                                        bufferSize);
+    result = SetFileInformationByHandle(handle, FileRenameInfo, renameInfo,  bufferSize);
 
     free(renameInfo);
 
