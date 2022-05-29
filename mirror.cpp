@@ -53,7 +53,7 @@ http://dokan-dev.github.io
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/shared_ptr.hpp>
-#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/list.hpp>
 #include "DbgPrint.h"
 #include "globals.h"
 
@@ -489,9 +489,9 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     context->nodes = m_nodes;
     context->winsec = winsec;
 
-    PSECURITY_DESCRIPTOR sd;
-    winsec->CreateDefaultSelfRelativeSD(&sd);
-    LocalFree(sd);
+//    PSECURITY_DESCRIPTOR sd;
+//    winsec->CreateDefaultSelfRelativeSD(&sd);
+//    LocalFree(sd);
 
     std::shared_ptr<FileOps> fops = std::make_shared<FileOps>(m_nodes,dbgp,globals);
 
@@ -539,9 +539,11 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         std::istream is(&filer);
         boost::archive::binary_iarchive ir(is, boost::archive::no_header);
 
-        ir >> m_nodes->_filenodes;
+        ir >> *m_nodes;
     }
 
+
+    m_nodes->printAll();
     DokanInit();
     //    status = DokanMain(&dokanOptions, &dokanOperations);
     DOKAN_HANDLE handle1;
@@ -617,7 +619,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     std::ostream os(&file);
     boost::archive::binary_oarchive ar(os, boost::archive::no_header);
 
-    ar << m_nodes->_filenodes;
+    ar << *m_nodes;
 
     file.close();
 

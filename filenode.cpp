@@ -33,33 +33,30 @@ THE SOFTWARE.
 
 filenode::filenode(const std::wstring& filename, bool is_directory, DWORD file_attr, const PDOKAN_IO_SECURITY_CONTEXT security_context)
     : is_directory(is_directory), attributes(file_attr), _fileName(filename) {
+    std::wcout << L"FILENODE name " << filename << std::endl;
+    std::wcout.flush();
     // No lock need, FileNode is still not in a directory
     //  times.reset();
 
 //    m_print = print;
 //    m_winsec = winsec;
 
-    if (security_context && security_context->AccessState.SecurityDescriptor) {
-        //    spdlog::info(L"{} : Attach SecurityDescriptor", filename);
-        //      DbgPrint(L"%s : Attach SecurityDescriptor",filename);
-//        if(g_UseStdErr){
-//            std::wcout << filename << "Attach SecurityDescriptor";
-//        }
-        security.SetDescriptor(m_winsec,m_print,security_context->AccessState.SecurityDescriptor);
-    }
+//    if (security_context && security_context->AccessState.SecurityDescriptor) {
+//        security.SetDescriptor(m_winsec,m_print,security_context->AccessState.SecurityDescriptor);
+//    }
 }
 
-void filenode::SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor)
-{
-    security.SetDescriptor(m_winsec,m_print,securitydescriptor);
-}
+//void filenode::SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor)
+//{
+//    security.SetDescriptor(m_winsec,m_print,securitydescriptor);
+//}
 
-void filenode::GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor)
-{
-    security.GetDescriptor(m_winsec,m_print,securitydescriptor);
-}
+//void filenode::GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor)
+//{
+//    security.GetDescriptor(m_winsec,m_print,securitydescriptor);
+//}
 
-void security_informations::SetDescriptor(std::shared_ptr<WinSec> winsec , std::shared_ptr<DbgPrint> print ,PSECURITY_DESCRIPTOR securitydescriptor) {
+void security_informations::SetDescriptor(std::shared_ptr<WinSec> winsec , std::shared_ptr<DbgPrint> print ,PSECURITY_DESCRIPTOR securitydescriptor) {    
     if (!securitydescriptor) return;
 
     PSECURITY_DESCRIPTOR internalsd = securitydescriptor;

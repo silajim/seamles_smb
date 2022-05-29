@@ -467,23 +467,7 @@ NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescr
 
 
 
-    printACL(dacl);
-//    FreeSid(psid);
-
-//    DWORD size;
-//    CreateWellKnownSid(WinAccountDomainAdminsSid,NULL,psid,&size);
-//    AddAccessAllowedAce(dacl,ACL_REVISION , DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE ,psid);
-//    FreeSid(psid);
-
-//    ACCESS_ALLOWED_ACE* ace;
-//    for (int i=0; i<(*dacl).AceCount; i++) {
-//        if(GetAce(dacl, i, (PVOID*)&ace)){
-//            ace->Mask =  DELETE | FILE_GENERIC_READ |  FILE_GENERIC_WRITE | FILE_GENERIC_EXECUTE | READ_CONTROL | WRITE_DAC | WRITE_OWNER | SYNCHRONIZE;
-//        }
-//    }
-
-
-//    AddAccessAllowedAce(dacl,ACL_REVISION , 0x1200a9 ,owner);
+//    printACL(dacl);
 
     PEXPLICIT_ACCESS_W peacces;
     err = GetExplicitEntriesFromAclW(dacl,&numofaclEntries,&peacces);

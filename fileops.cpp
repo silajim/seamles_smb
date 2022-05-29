@@ -250,10 +250,11 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
                 }
             }
 
+            std::shared_ptr<filenode> f=nullptr;
+
             if(creationDisposition == CREATE_NEW || creationDisposition == CREATE_ALWAYS){
-                std::lock_guard<std::mutex> lk(filenodes->m_mutex);
-//                filenodes->m_mutex.lock()
-                filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, true, FileAttributes, SecurityContext));
+                f = std::make_shared<filenode>(filename_str, true, FileAttributes, nullptr);
+                f->security.SetDescriptor(GET_WINSEC_INSTANCE,GET_PRINT_INSTANCE,SecurityContext->AccessState.SecurityDescriptor);
                 SecurityContext->AccessState.SecurityDescriptor = NULL;
                 securityAttrib.lpSecurityDescriptor = NULL;
 
@@ -267,6 +268,10 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
                 if (error != ERROR_ALREADY_EXISTS || creationDisposition == CREATE_NEW) {
                     GET_PRINT_INSTANCE->print(L"\terror code = %d\n\n", error);
                     status = DokanNtStatusFromWin32(error);
+                }
+            }else{
+                if(f){
+                    filenodes->addFileNode(f);
                 }
             }
 
@@ -343,9 +348,13 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
                 GET_PRINT_INSTANCE->print(L"\tImpersonateLoggedOnUser failed.\n");
             }
         }
+        std::shared_ptr<filenode> f=nullptr;
+
         if(creationDisposition == CREATE_NEW){
-            std::lock_guard<std::mutex> lk(filenodes->m_mutex);
-            filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, fileAttributesAndFlags, SecurityContext));
+            f = std::make_shared<filenode>(filename_str, false, FileAttributes, nullptr);
+            f->security.SetDescriptor(GET_WINSEC_INSTANCE,GET_PRINT_INSTANCE,SecurityContext->AccessState.SecurityDescriptor);
+//            std::lock_guard<std::mutex> lk(filenodes->m_mutex);
+//            filenodes->_filenodes->emplace(filename_str,std::make_shared<filenode>(filename_str, false, fileAttributesAndFlags, SecurityContext));
             SecurityContext->AccessState.SecurityDescriptor = NULL;
             securityAttrib.lpSecurityDescriptor=NULL;
         }
@@ -364,6 +373,12 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
             CloseHandle(userTokenHandle);
             RevertToSelf();
             SetLastError(lastError);
+        }
+
+        if (handle != INVALID_HANDLE_VALUE || handle!=NULL ) {
+            if(f)
+                filenodes->addFileNode(f);
+
         }
 
         if (handle == INVALID_HANDLE_VALUE || handle==NULL ) {

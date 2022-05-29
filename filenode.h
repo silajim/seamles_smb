@@ -144,16 +144,16 @@ class filenode {
   security_informations security;
   std::mutex _data_mutex;
 
-  void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor);
-  void GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor);
+//  void SetDescriptor(PSECURITY_DESCRIPTOR securitydescriptor);
+//  void GetDescriptor(PSECURITY_DESCRIPTOR *securitydescriptor);
 
 
  private:
 
   filenode() = default;
 
-  std::shared_ptr<WinSec> m_winsec;
-  std::shared_ptr<DbgPrint> m_print;
+//  std::shared_ptr<WinSec> m_winsec;
+//  std::shared_ptr<DbgPrint> m_print;
 
    friend class boost::serialization::access;
    template <class Archive>
