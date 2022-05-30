@@ -41,8 +41,13 @@ struct Nodes{
     void printAll();
     std::shared_ptr<filenode> findFileNode(std::wstring fname);
     bool addFileNode(std::shared_ptr<filenode> node);
+    bool rename(std::wstring fname , std::wstring newfname);
+    bool move(std::wstring fname , std::wstring newfname);
+    bool deleteFileNode(std::wstring fname);
 
 private:
+     std::shared_ptr<filenode> findFileNodeP(std::wstring fname);
+//    std::mutex m2;
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version)
@@ -65,6 +70,58 @@ inline void Nodes::printAll()
 inline std::shared_ptr<filenode> Nodes::findFileNode(std::wstring fname)
 {
     std::lock_guard<std::mutex> lg(m_mutex);
+    return findFileNodeP(fname);
+
+}
+
+inline bool Nodes::addFileNode(std::shared_ptr<filenode> node)
+{
+    std::lock_guard<std::mutex> lg(m_mutex);
+    if(!node)
+        return false;
+    auto f = findFileNodeP(node->_fileName);
+    if(!f){
+        _filenodes->push_back(node);
+        return true;
+    }
+    return false;
+}
+
+inline bool Nodes::rename(std::wstring fname, std::wstring newfname)
+{
+     std::lock_guard<std::mutex> lg(m_mutex);
+    if(_filenodes->empty())
+        return false;
+    auto f = findFileNodeP(fname);
+    if(f){
+        f->_fileName = newfname;
+        return true;
+    }
+    return false;
+
+}
+
+inline bool Nodes::move(std::wstring fname, std::wstring newfname)
+{
+    return rename(fname,newfname);
+
+}
+
+inline bool Nodes::deleteFileNode(std::wstring fname)
+{
+    std::lock_guard<std::mutex> lg(m_mutex);
+    if(_filenodes->empty())
+        return false;
+    auto f = findFileNodeP(fname);
+    if(f){
+        _filenodes->remove(f);
+        return true;
+    }
+    return false;
+}
+
+inline std::shared_ptr<filenode> Nodes::findFileNodeP(std::wstring fname)
+{
     if(_filenodes->empty())
         return nullptr;
 
@@ -74,21 +131,6 @@ inline std::shared_ptr<filenode> Nodes::findFileNode(std::wstring fname)
     }
 
     return nullptr;
-}
-
-inline bool Nodes::addFileNode(std::shared_ptr<filenode> node)
-{
-    std::lock_guard<std::mutex> lg(m_mutex);
-    if(!node)
-        return false;
-    m_mutex.unlock();
-    auto f = findFileNode(node->_fileName);
-    m_mutex.lock();
-    if(!f){
-        _filenodes->push_back(node);
-        return true;
-    }
-    return false;
 }
 
 

@@ -788,7 +788,9 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorFindFiles(LPCWSTR FileName, PFillFindData
     return STATUS_SUCCESS;
 }
 
-NTSTATUS DOKAN_CALLBACK FileOps::MirrorDeleteFile(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo) { WCHAR filePath[DOKAN_MAX_PATH];
+NTSTATUS DOKAN_CALLBACK FileOps::MirrorDeleteFile(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo)
+{
+    WCHAR filePath[DOKAN_MAX_PATH];
     HANDLE handle = (HANDLE)DokanFileInfo->Context;
 
     GetFilePath(filePath, DOKAN_MAX_PATH, FileName,DokanFileInfo);
@@ -802,10 +804,18 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorDeleteFile(LPCWSTR FileName, PDOKAN_FILE_
     if (handle && handle != INVALID_HANDLE_VALUE) {
         FILE_DISPOSITION_INFO fdi;
         fdi.DeleteFile = DokanFileInfo->DeleteOnClose;
-        if (!SetFileInformationByHandle(handle, FileDispositionInfo, &fdi, sizeof(FILE_DISPOSITION_INFO)))
+        if (!SetFileInformationByHandle(handle, FileDispositionInfo, &fdi, sizeof(FILE_DISPOSITION_INFO))){
+            GET_PRINT_INSTANCE->print(L"DeleteFile ERROR %s - %d\n", filePath,GetLastError());
             return DokanNtStatusFromWin32(GetLastError());
+        }
     }
 
+//     if(DeleteFile(filePath)==0){
+//         GET_PRINT_INSTANCE->print(L"DeleteFile ERROR %s - %d\n", filePath,GetLastError());
+//         return DokanNtStatusFromWin32(GetLastError());
+//     }
+
+    GET_FS_INSTANCE->deleteFileNode(FileName);
     return STATUS_SUCCESS;
 }
 
@@ -844,8 +854,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::DeleteDirectory(LPCWSTR FileName, PDOKAN_FILE_I
     }
 
     do {
-        if (wcscmp(findData.cFileName, L"..") != 0 &&
-                wcscmp(findData.cFileName, L".") != 0) {
+        if (wcscmp(findData.cFileName, L"..") != 0 && wcscmp(findData.cFileName, L".") != 0) {
             FindClose(hFind);
             GET_PRINT_INSTANCE->print(L"\tDirectory is not empty: %s\n", findData.cFileName);
             return STATUS_DIRECTORY_NOT_EMPTY;
@@ -861,6 +870,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::DeleteDirectory(LPCWSTR FileName, PDOKAN_FILE_I
         return DokanNtStatusFromWin32(error);
     }
 
+    GET_FS_INSTANCE->deleteFileNode(FileName);
     return STATUS_SUCCESS;
 }
 
@@ -916,6 +926,7 @@ NTSTATUS DOKAN_CALLBACK FileOps::MirrorMoveFile(LPCWSTR FileName, LPCWSTR NewFil
     free(renameInfo);
 
     if (result) {
+        GET_FS_INSTANCE->rename(std::wstring(FileName),std::wstring(NewFileName));
         return STATUS_SUCCESS;
     } else {
         DWORD error = GetLastError();
