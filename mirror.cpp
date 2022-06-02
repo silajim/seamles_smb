@@ -67,6 +67,7 @@ http://dokan-dev.github.io
 #include "nodes.h"
 #include "fileops.h"
 #include "Context.h"
+#include "filemount.h"
 
 /// https://localcoder.org/using-a-c-class-member-function-as-a-c-callback-function
 /// Hack to map c++ member functions to C callbacks
@@ -219,8 +220,7 @@ static BOOL AddSeSecurityNamePrivilege(std::shared_ptr<DbgPrint> print) {
 
     TOKEN_PRIVILEGES oldPriv;
     DWORD retSize;
-    AdjustTokenPrivileges(token, FALSE, &priv, sizeof(TOKEN_PRIVILEGES), &oldPriv,
-                          &retSize);
+    AdjustTokenPrivileges(token, FALSE, &priv, sizeof(TOKEN_PRIVILEGES), &oldPriv, &retSize);
     err = GetLastError();
     if (err != ERROR_SUCCESS) {
         print->print(L"  failed: Unable to adjust token privileges: %u\n", err);
@@ -246,7 +246,7 @@ static BOOL AddSeSecurityNamePrivilege(std::shared_ptr<DbgPrint> print) {
 
 #pragma warning(pop)
 
-std::shared_ptr<Globals> globals;
+std::shared_ptr<FileMount> mount;
 BOOL WINAPI CtrlHandler(DWORD dwCtrlType) {
     switch (dwCtrlType) {
     case CTRL_C_EVENT:
@@ -255,7 +255,7 @@ BOOL WINAPI CtrlHandler(DWORD dwCtrlType) {
     case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
         SetConsoleCtrlHandler(CtrlHandler, FALSE);
-        DokanRemoveMountPoint(globals->MountPoint().c_str());
+        mount->unmount();
         return TRUE;
     default:
         return FALSE;
@@ -305,12 +305,7 @@ void ShowUsage() {
 int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     int status;
     ULONG command;
-    DOKAN_OPERATIONS dokanOperations;
     DOKAN_OPTIONS dokanOptions;
-    DOKAN_OPTIONS dokanOptions2;
-
-
-
 
 
     if (argc < 3) {
@@ -321,7 +316,6 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
 
     ZeroMemory(&dokanOptions, sizeof(DOKAN_OPTIONS));
-    ZeroMemory(&dokanOptions2, sizeof(DOKAN_OPTIONS));
     dokanOptions.Version = DOKAN_VERSION;
     //    dokanOptions.ThreadCount = 0; // use default
 
@@ -330,7 +324,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
     std::wclog.rdbuf(&wcharDebugOutput);
     std::wcout.rdbuf(&wcharDebugOutput);
 
-
+    std::shared_ptr<Globals> globals;
     bool g_DebugMode=false , g_UseStdErr=false;
     globals = std::make_shared<Globals>();
 
@@ -481,104 +475,13 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
     dokanOptions.Options |= DOKAN_OPTION_ALT_STREAM;
 
-    std::shared_ptr<Nodes> m_nodes = std::make_shared<Nodes>();
-    std::shared_ptr<WinSec> winsec = std::make_shared<WinSec>(dbgp);
-    std::shared_ptr<Context> context = std::make_shared<Context>();
-    context->globals = globals;
-    context->print = dbgp;
-    context->nodes = m_nodes;
-    context->winsec = winsec;
 
-//    PSECURITY_DESCRIPTOR sd;
-//    winsec->CreateDefaultSelfRelativeSD(&sd);
-//    LocalFree(sd);
+    mount = std::make_shared<FileMount>(globals,g_DebugMode,g_UseStdErr,dokanOptions);
 
-    std::shared_ptr<FileOps> fops = std::make_shared<FileOps>(m_nodes,dbgp,globals);
-
-
-
-    ZeroMemory(&dokanOperations, sizeof(DOKAN_OPERATIONS));
-    dokanOperations.ZwCreateFile = &FileOps::MirrorCreateFile;
-    dokanOperations.Cleanup = &FileOps::MirrorCleanup;
-    dokanOperations.CloseFile = &FileOps::MirrorCloseFile;
-    dokanOperations.ReadFile = &FileOps::MirrorReadFile;
-    dokanOperations.WriteFile = &FileOps::MirrorWriteFile;
-    dokanOperations.FlushFileBuffers = &FileOps::MirrorFlushFileBuffers;
-    dokanOperations.GetFileInformation = &FileOps::MirrorGetFileInformation;
-    dokanOperations.FindFiles = &FileOps::MirrorFindFiles;
-    dokanOperations.FindFilesWithPattern = NULL;
-    dokanOperations.SetFileAttributes = &FileOps::MirrorSetFileAttributes;
-    dokanOperations.SetFileTime = &FileOps::MirrorSetFileTime;
-    dokanOperations.DeleteFile = &FileOps::MirrorDeleteFile;
-    dokanOperations.DeleteDirectory = &FileOps::DeleteDirectory;
-    dokanOperations.MoveFile = &FileOps::MirrorMoveFile;
-    dokanOperations.SetEndOfFile = &FileOps::MirrorSetEndOfFile;
-    dokanOperations.SetAllocationSize = &FileOps::MirrorSetAllocationSize;
-    dokanOperations.LockFile = &FileOps::MirrorLockFile;
-    dokanOperations.UnlockFile = &FileOps::MirrorUnlockFile;
-    dokanOperations.GetFileSecurity = &FileOps::MirrorGetFileSecurity;
-    dokanOperations.SetFileSecurity = &FileOps::MirrorSetFileSecurity;
-    dokanOperations.GetDiskFreeSpace = &FileOps::MirrorDokanGetDiskFreeSpace;
-    dokanOperations.GetVolumeInformation = &FileOps::MirrorGetVolumeInformation;
-    dokanOperations.Unmounted = &FileOps::MirrorUnmounted;
-    dokanOperations.FindStreams = &FileOps::MirrorFindStreams;
-    dokanOperations.Mounted = &FileOps::MirrorMounted;
-
-    //    std::shared_ptr<Context> m_nodes;
-//    m_nodes->_filenodes = std::make_shared<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
-
-    dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(context.get());
-
-    std::wstring rootdir = globals->RootDirectory();
-    std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
-
-    if(boost::filesystem::exists(rootdir+L".dat")){
-
-        std::filebuf filer;
-        filer.open(rootdir+L".dat",std::ios_base::in|std::ios_base::binary);
-        std::istream is(&filer);
-        boost::archive::binary_iarchive ir(is, boost::archive::no_header);
-
-        ir >> *m_nodes;
-    }
-
-
-    m_nodes->printAll();
     DokanInit();
-    //    status = DokanMain(&dokanOptions, &dokanOperations);
-    DOKAN_HANDLE handle1;
-    status = DokanCreateFileSystem(&dokanOptions, &dokanOperations,&handle1);
-    if(status == DOKAN_SUCCESS){
-        //       dokanOptions2 = dokanOptions;
 
-        //       std::shared_ptr<Globals> globals2 = std::make_shared<Globals>(globals);
-        //       std::shared_ptr<DbgPrint> dbgp2 = std::make_shared<DbgPrint>(g_UseStdErr,g_DebugMode);
-        //       std::shared_ptr<Nodes> m_nodes2 = std::make_shared<Nodes>();
-        //       std::shared_ptr<WinSec> winsec2 = std::make_shared<WinSec>(dbgp);
-        //       std::shared_ptr<Context> context2 = std::make_shared<Context>();
-        //       context2->globals = globals2;
-        //       context2->print = dbgp2;
-        //       context2->nodes = m_nodes2;
-        //       context2->winsec = winsec2;
-
-        //       globals2->setRootDirectory(LR"(\\192.168.1.4\temp2)");
-        //       globals2->setMountPoint(L"W:");
-        //       globals2->setVolname(L"temp2");
-
-        //       dokanOptions2.MountPoint = globals2->MountPoint().data();
-        //       dokanOptions2.GlobalContext = reinterpret_cast<ULONG64>(context2.get());
-
-        //       DOKAN_HANDLE handle2;
-        //       status = DokanCreateFileSystem(&dokanOptions2, &dokanOperations,&handle2);
-
-        //       if(status == DOKAN_SUCCESS){
-        //          DokanWaitForFileSystemClosed(handle2,INFINITE);
-        //       }
-
-
-        DokanWaitForFileSystemClosed(handle1,INFINITE);
-    }
-
+    status = mount->mount();
+    mount->join();
 
 
     DokanShutdown();
@@ -611,26 +514,5 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         fprintf(stderr, "Unknown error: %d\n", status);
         break;
     }
-
-    //    std::wstring rootdir (RootDirectory);
-    //    std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
-    std::filebuf file;
-    file.open(rootdir+L".dat",std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
-    std::ostream os(&file);
-    boost::archive::binary_oarchive ar(os, boost::archive::no_header);
-
-    ar << *m_nodes;
-
-    file.close();
-
-    //    std::cout << "Directories Cached" << std::endl;
-    //    for(auto d : directory){
-    //        std::wcerr << d.first;
-    //    }
-
-    //    std::cout << "Files Cached" << std::endl;
-    //    for(auto f : *_filenodes.get()){
-    //        std::wcerr << f.first;
-    //    }
     return EXIT_SUCCESS;
 }

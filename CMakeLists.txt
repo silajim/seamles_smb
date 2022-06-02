@@ -56,6 +56,8 @@ set(Sources
     "globals.h "
     "globals.cpp"
     "mirror.cpp"
+    "filemount.h"
+    "filemount.cpp"
     "fileops.h"
     "fileops.cpp"
     "filenode.cpp"

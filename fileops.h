@@ -63,8 +63,6 @@ public:
     static NTSTATUS MirrorMounted(LPCWSTR MountPoint, PDOKAN_FILE_INFO DokanFileInfo);
     static NTSTATUS MirrorUnmounted(PDOKAN_FILE_INFO DokanFileInfo);
 
-
-
     static NTSTATUS MirrorGetFileSecurity(LPCWSTR FileName, PSECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR SecurityDescriptor, ULONG BufferLength, PULONG LengthNeeded, PDOKAN_FILE_INFO DokanFileInfo);
 
     static NTSTATUS MirrorSetFileSecurity(LPCWSTR FileName, PSECURITY_INFORMATION SecurityInformation, PSECURITY_DESCRIPTOR SecurityDescriptor, ULONG SecurityDescriptorLength, PDOKAN_FILE_INFO DokanFileInfo);
