@@ -1,5 +1,13 @@
 #include "filemount.h"
 
+#include "securityprocessor.h"
+#include "WinSec.h"
+#include "filesecurity.h"
+#include "globals.h"
+#include "nodes.h"
+#include "fileops.h"
+#include "context.h"
+
 FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestderr, DOKAN_OPTIONS dokanOptions)
 {
     memset(&m_dokanOptions,0,sizeof(DOKAN_OPTIONS));

@@ -51,11 +51,23 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Source groups
 ################################################################################
 set(Sources
+    "mirror.cpp"
+"consolehandler.h"
+"consolehandler.cpp"
+
+)
+source_group("Sources" FILES ${Sources})
+
+set(ALL_FILES
+    ${Sources}
+)
+
+add_library(seamless_smb_lib SHARED)
+target_sources(seamless_smb_lib PUBLIC
     "nodes.h"
     "Context.h"
     "globals.h "
     "globals.cpp"
-    "mirror.cpp"
     "filemount.h"
     "filemount.cpp"
     "fileops.h"
@@ -70,15 +82,9 @@ set(Sources
     "WinSec.h"
     "securityprocessor.h"
     "securityprocessor.cpp"
-"consolehandler.h"
-"consolehandler.cpp"
+    )
 
-)
-source_group("Sources" FILES ${Sources})
 
-set(ALL_FILES
-    ${Sources}
-)
 
 ################################################################################
 # Target
@@ -87,10 +93,14 @@ add_executable(${PROJECT_NAME} ${ALL_FILES})
 
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/ )
+target_include_directories(seamless_smb_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include/ )
 
+target_link_directories(seamless_smb_lib PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib)
 target_link_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lib)
 # Link with other targets.
-target_link_libraries(${PROJECT_NAME} PRIVATE  dokan2 Boost::filesystem Boost::serialization)
+target_link_libraries(seamless_smb_lib PUBLIC dokan2 Boost::filesystem Boost::serialization)
+#target_link_libraries(seamless_smb_lib PUBLIC  dokan2 )
+target_link_libraries(${PROJECT_NAME} PRIVATE  seamless_smb_lib)
 
 
 #use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
@@ -143,36 +153,22 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
     )
 endif()
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
-    )
+    set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"    )
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
-    )
+    set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE" )
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
-    )
+    set_target_properties(${PROJECT_NAME} PROPERTIES  INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE" )
+    set_target_properties(seamless_smb_lib PROPERTIES  INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE" )
+
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
-    )
+    set_target_properties(${PROJECT_NAME} PROPERTIES INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE" )
 endif()
 ################################################################################
 # MSVC runtime library
 ################################################################################
 get_property(MSVC_RUNTIME_LIBRARY_DEFAULT TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY)
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM")
-    string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"
-        $<$<CONFIG:Debug>:
-            MultiThreadedDebug
-        >
-        $<$<CONFIG:Release>:
-            MultiThreaded
-        >
-        $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${MSVC_RUNTIME_LIBRARY_DEFAULT}>
-    )
+    string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"  $<$<CONFIG:Debug>: MultiThreadedDebug >   $<$<CONFIG:Release>:MultiThreaded  >   $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${MSVC_RUNTIME_LIBRARY_DEFAULT}> )
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
     string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"
         $<$<CONFIG:Debug>:
@@ -205,6 +201,7 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
     )
 endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY ${MSVC_RUNTIME_LIBRARY_STR})
+set_target_properties(seamless_smb_lib PROPERTIES MSVC_RUNTIME_LIBRARY ${MSVC_RUNTIME_LIBRARY_STR})
 
 ################################################################################
 # Include directories
@@ -257,8 +254,9 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
         "_UNICODE"
     )
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"
-    )
+    target_compile_definitions(${PROJECT_NAME} PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
+    target_compile_definitions(seamless_smb_lib PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
+
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         "$<$<CONFIG:Debug>:"

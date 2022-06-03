@@ -29,45 +29,22 @@ http://dokan-dev.github.io
 
 #include "include/dokan/dokan.h"
 #include "include/dokan/fileinfo.h"
-#include <malloc.h>
+
+#include "globals.h"
+
 #include <stdio.h>
-#include <stdlib.h>
-#include <winbase.h>
 #include <string>
-#include <iostream>
-#include <sddl.h>
-#include <accctrl.h>
-#include <aclapi.h>
-#include <map>
-#include <unordered_map>
-#include "filenode.h"
+//#include <locale>
+#include <sstream>
+#include <vector>
 
 #include <consoleapi.h>
-#include <handleapi.h>
-#include <processthreadsapi.h>
-#include <Psapi.h>
-#include <Mq.h>
 
-#include <boost/filesystem.hpp>
-#include <boost/serialization/map.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/shared_ptr.hpp>
-#include <boost/serialization/list.hpp>
-#include "DbgPrint.h"
-#include "globals.h"
+#include <iostream>
 
-#include <ostream>
-#include <algorithm>
-
-#include "securityprocessor.h"
-#include "WinSec.h"
-#include "filesecurity.h"
-#include "globals.h"
-#include "nodes.h"
-#include "fileops.h"
-#include "Context.h"
 #include "filemount.h"
+#include "DbgPrint.h"
+
 
 /// https://localcoder.org/using-a-c-class-member-function-as-a-c-callback-function
 /// Hack to map c++ member functions to C callbacks

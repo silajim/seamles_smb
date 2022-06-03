@@ -1,19 +1,16 @@
 #ifndef FILEMOUNT_H
 #define FILEMOUNT_H
 
-#include "securityprocessor.h"
-#include "WinSec.h"
-#include "filesecurity.h"
 #include "globals.h"
-#include "nodes.h"
-#include "fileops.h"
-#include "Context.h"
+
 
 #include "include/dokan/dokan.h"
 
 #include <string>
 #include <memory>
+#include <mutex>
 
+class Context;
 
 class FileMount
 {
