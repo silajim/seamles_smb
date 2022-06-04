@@ -667,7 +667,9 @@ void WinSec::printSid(PSID sid)
     wchar_t* doname = new TCHAR[512];
     DWORD domainnamelen;
     LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
-    wcout<<"SID: " << doname << "/" << oname <<std::endl;
+    m_print->print(L"%s/%s",doname,oname);
+//    wcout<<"SID: " << doname << "/" << oname <<std::endl;
+//    wcout.flush();
 
 }
 

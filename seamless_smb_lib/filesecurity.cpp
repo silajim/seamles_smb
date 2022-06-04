@@ -1,8 +1,8 @@
 #include <windows.h>
 #include <sddl.h>
 
-#include "include/dokan/dokan.h"
-#include "include/dokan/fileinfo.h"
+#include "dokan/dokan.h"
+#include "dokan/fileinfo.h"
 
 
 //#include "filesecurity.h"

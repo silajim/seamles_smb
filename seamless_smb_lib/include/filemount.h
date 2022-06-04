@@ -2,17 +2,18 @@
 #define FILEMOUNT_H
 
 #include "globals.h"
+#include "seamless_smb_lib_export.h"
 
-
-#include "include/dokan/dokan.h"
+#include "dokan/dokan.h"
 
 #include <string>
 #include <memory>
 #include <mutex>
 
+
 class Context;
 
-class FileMount
+class SEAMLESS_SMB_LIB_EXPORT FileMount
 {
 public:
     FileMount(std::shared_ptr<Globals> globals,bool debug,bool usestderr ,DOKAN_OPTIONS dokanOptions);

@@ -34,7 +34,6 @@ http://dokan-dev.github.io
 
 #include <stdio.h>
 #include <string>
-//#include <locale>
 #include <sstream>
 #include <vector>
 
@@ -43,7 +42,6 @@ http://dokan-dev.github.io
 #include <iostream>
 
 #include "filemount.h"
-#include "DbgPrint.h"
 
 
 /// https://localcoder.org/using-a-c-class-member-function-as-a-c-callback-function
@@ -164,16 +162,17 @@ struct MessageOutputer<wchar_t,std::char_traits<wchar_t>> {
 };
 };
 
-static BOOL AddSeSecurityNamePrivilege(std::shared_ptr<DbgPrint> print) {
+static BOOL AddSeSecurityNamePrivilege() {
     HANDLE token = 0;
-    print->print(L"## Attempting to add SE_SECURITY_NAME privilege to process token ##\n");
+//    print->print(L"## Attempting to add SE_SECURITY_NAME privilege to process token ##\n");
+    std::wcerr << "## Attempting to add SE_SECURITY_NAME privilege to process token ##" << std::endl;
     DWORD err;
     LUID luid;
     if (!LookupPrivilegeValue(0, SE_SECURITY_NAME, &luid)) {
         err = GetLastError();
         if (err != ERROR_SUCCESS) {
-            print->print(L"  failed: Unable to lookup privilege value. error = %u\n",
-                         err);
+//            print->print(L"  failed: Unable to lookup privilege value. error = %u\n", err);
+            std::wcerr << "  failed: Unable to lookup privilege value. error =" << err << std::endl;
             return FALSE;
         }
     }
@@ -190,7 +189,8 @@ static BOOL AddSeSecurityNamePrivilege(std::shared_ptr<DbgPrint> print) {
                           TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
         err = GetLastError();
         if (err != ERROR_SUCCESS) {
-            print->print(L"  failed: Unable obtain process token. error = %u\n", err);
+//            print->print(L"  failed: Unable obtain process token. error = %u\n", err);
+            std::wcerr << "  failed: Unable obtain process token. error = " << err << std::endl;
             return FALSE;
         }
     }
@@ -200,7 +200,8 @@ static BOOL AddSeSecurityNamePrivilege(std::shared_ptr<DbgPrint> print) {
     AdjustTokenPrivileges(token, FALSE, &priv, sizeof(TOKEN_PRIVILEGES), &oldPriv, &retSize);
     err = GetLastError();
     if (err != ERROR_SUCCESS) {
-        print->print(L"  failed: Unable to adjust token privileges: %u\n", err);
+//        print->print(L"  failed: Unable to adjust token privileges: %u\n", err);
+        std::wcerr << "  failed: Unable to adjust token privileges: " << err << std::endl;
         CloseHandle(token);
         return FALSE;
     }
@@ -213,7 +214,14 @@ static BOOL AddSeSecurityNamePrivilege(std::shared_ptr<DbgPrint> print) {
             break;
         }
     }
-    print->print(privAlreadyPresent ? L"  success: privilege already present\n": L"  success: privilege added\n");
+
+    if(privAlreadyPresent){
+        std::wcerr << "  success: privilege already present" << std::endl;
+    }else
+        std::wcerr << "  success: privilege added" << std::endl;
+//    print->print(privAlreadyPresent ? L"  success: privilege already present\n": L"  success: privilege added\n");
+
+    std::wcerr.flush();
     if (token)
         CloseHandle(token);
     return TRUE;
@@ -423,11 +431,11 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
         fwprintf(stderr, L"Control Handler is not set.\n");
     }
 
-    std::shared_ptr<DbgPrint> dbgp = std::make_shared<DbgPrint>(g_UseStdErr,g_DebugMode);
+//    std::shared_ptr<DbgPrint> dbgp = std::make_shared<DbgPrint>(g_UseStdErr,g_DebugMode);
 
     // Add security name privilege. Required here to handle GetFileSecurity
     // properly.
-    globals->setHasSeSecurityPrivilege(AddSeSecurityNamePrivilege(dbgp));
+    globals->setHasSeSecurityPrivilege(AddSeSecurityNamePrivilege());
     if (!globals->HasSeSecurityPrivilege()) {
         fwprintf(stderr,
                  L"[Mirror] Failed to add security privilege to process\n"

@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <string>
 #include <memory>
+#include "seamless_smb_lib_export.h"
 
 // Enable Long Paths on Windows 10 version 1607 and later by changing
 // the OS configuration (see Microsoft own documentation for the steps)
@@ -22,7 +23,7 @@
 
 
 
-class Globals{
+class SEAMLESS_SMB_LIB_EXPORT Globals{
     public:
     Globals();
     Globals(std::wstring RootDirectory, std::wstring MountPoint , std::wstring UNCName);

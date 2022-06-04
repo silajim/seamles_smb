@@ -1,7 +1,7 @@
 #ifndef NODES_H
 #define NODES_H
 
-#include "include/dokan/dokan.h"
+#include "dokan/dokan.h"
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
