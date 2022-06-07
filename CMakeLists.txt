@@ -44,6 +44,9 @@ set(CMAKE_CONFIGURATION_TYPES
 ################################################################################
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 add_subdirectory(seamless_smb_lib)
+add_subdirectory(qt-solutions/qtservice/src)
+add_subdirectory(seamless_smb_common)
+add_subdirectory(seamless_smb_service)
 
 ################################################################################
 # Sub-projects
