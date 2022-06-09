@@ -42,6 +42,9 @@ FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestder
 
 int FileMount::mount()
 {
+    if(mounted)
+        return DOKAN_SUCCESS;
+
     std::lock_guard<std::mutex> lg (mutex);
 
     DOKAN_OPERATIONS dokanOperations;
@@ -79,7 +82,6 @@ int FileMount::mount()
         m_context->print->print(L"%s,%s successfully Mounted\n",getMountPoint().c_str(),getRootDir().c_str());
     }
     return status;
-
 }
 
 void FileMount::unmount()
@@ -87,9 +89,11 @@ void FileMount::unmount()
     std::lock_guard<std::mutex> lg (mutex);
 
     if(mounted && handle && DokanIsFileSystemRunning(handle)){
+//        DokanRemoveMountPoint(m_context->globals->MountPoint().c_str());
+        DokanCloseHandle(handle);
+
         mounted = false;
         handle = NULL;
-        DokanRemoveMountPoint(m_context->globals->MountPoint().c_str());
 
         std::wstring rootdir (m_context->globals->RootDirectory());
         std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
@@ -109,7 +113,13 @@ bool FileMount::isRunning()
     std::lock_guard<std::mutex> lg (mutex);
 
     if(mounted && handle){
-        return DokanIsFileSystemRunning(handle);
+        bool running = DokanIsFileSystemRunning(handle);
+        if(!running){
+            mounted = false;
+            DokanCloseHandle(handle);
+            handle = NULL;
+        }
+
     }
     return false;
 }
