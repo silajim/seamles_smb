@@ -18,5 +18,5 @@ find_package(Qt5 COMPONENTS Core Network REQUIRED)
 target_link_libraries(seamless_smb_common PUBLIC Qt5::Core Qt5::Network)
 target_include_directories(seamless_smb_common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../include/ ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-set_property(TARGET seamless_smb_common PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+#set_property(TARGET seamless_smb_common PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 target_compile_definitions(seamless_smb_common PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )

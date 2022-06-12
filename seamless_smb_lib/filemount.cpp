@@ -18,6 +18,8 @@ FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestder
     m_context->nodes = std::make_shared<Nodes>();
     m_context->winsec = std::make_shared<WinSec>( m_context->print);
 
+
+    dokanOptions.Version = DOKAN_VERSION;
     dokanOptions.MountPoint = globals->MountPoint().data();
     dokanOptions.UNCName = globals->UNCName().c_str();
 
@@ -47,7 +49,7 @@ int FileMount::mount()
 
     std::lock_guard<std::mutex> lg (mutex);
 
-    DOKAN_OPERATIONS dokanOperations;
+
     memset(&dokanOperations,0,sizeof(DOKAN_OPERATIONS));
 
     dokanOperations.ZwCreateFile = &FileOps::MirrorCreateFile;

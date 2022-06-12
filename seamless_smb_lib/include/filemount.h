@@ -27,6 +27,7 @@ public:
     std::wstring getVolumeName();
 
 private:
+    DOKAN_OPERATIONS dokanOperations;
     DOKAN_OPTIONS m_dokanOptions;
     std::shared_ptr<Context> m_context;
     DOKAN_HANDLE handle=NULL;

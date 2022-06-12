@@ -5,8 +5,7 @@ set(CMAKE_SYSTEM_VERSION 10.0.22000.0 CACHE STRING "" FORCE)
 project(seamless_smb  C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake")
-set(Boost_USE_STATIC_RUNTIME ON)
-find_package(Boost REQUIRED COMPONENTS serialization filesystem)
+
 
 #add_subdirectory(rtl)
 
@@ -47,6 +46,7 @@ add_subdirectory(seamless_smb_lib)
 add_subdirectory(qt-solutions/qtservice/src)
 add_subdirectory(seamless_smb_common)
 add_subdirectory(seamless_smb_service)
+add_subdirectory(seamless_smb_service_tester)
 
 ################################################################################
 # Sub-projects
@@ -160,7 +160,7 @@ endif()
 # MSVC runtime library
 ################################################################################
 get_property(MSVC_RUNTIME_LIBRARY_DEFAULT TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY)
-set_property(TARGET ${PROJECT_NAME} PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+#set_property(TARGET ${PROJECT_NAME} PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 
 ################################################################################
