@@ -2,6 +2,7 @@
 #define FILEMOUNT_H
 
 #include "globals.h"
+#include "DbgPrint.h"
 #include "seamless_smb_lib_export.h"
 
 #include "dokan/dokan.h"
@@ -16,7 +17,7 @@ class Context;
 class SEAMLESS_SMB_LIB_EXPORT FileMount
 {
 public:
-    FileMount(std::shared_ptr<Globals> globals,bool debug,bool usestderr ,DOKAN_OPTIONS dokanOptions);
+    FileMount(std::shared_ptr<Globals> globals,bool debug,bool usestderr ,DOKAN_OPTIONS dokanOptions, std::shared_ptr<DbgPrint> print=nullptr);
     int mount();
     void unmount();
     bool isRunning();

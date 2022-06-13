@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 5.0.0, 2022-06-12T19:05:36. -->
+<!-- Written by QtCreator 5.0.0, 2022-06-12T22:03:57. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -340,6 +340,7 @@
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
+    <value type="bool" key="RunConfiguration.UseTerminal">true</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory.default">G:/Dokan Library-1.5.0/sample/build-mirror-Desktop_Qt_5_15_2_MSVC2019_64bit-Debug/bin</value>
    </valuemap>
    <value type="int" key="ProjectExplorer.Target.RunConfigurationCount">3</value>

@@ -6,6 +6,7 @@ project(seamless_smb  C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake")
 
+find_package(Qt5 COMPONENTS Core REQUIRED)
 
 #add_subdirectory(rtl)
 
@@ -259,4 +260,29 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
         ">"
     )
 endif()
+
+
+get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
+find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+
+
+add_custom_target(RunWideployQt ALL)
+add_dependencies(RunWideployQt seamless_smb_service seamless_smb_service_lib)
+
+add_custom_command(TARGET RunWideployQt POST_BUILD
+    #COMMAND powershell -ExecutionPolicy Bypass -File "$<SHELL_PATH:${CMAKE_CURRENT_SOURCE_DIR}/runcommand.ps1>" "${WINDEPLOYQT_EXECUTABLE}" --no-translations "$<SHELL_PATH:$<TARGET_FILE:${atarget}>>"
+    # "cd ." command is used to force true command doing anything else in cases windeployqt fails
+    COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations "$<SHELL_PATH:$<TARGET_FILE:seamless_smb_service>>" || cd .
+    COMMENT "Running windeployqt..."
+    )
+
+add_custom_command(TARGET RunWideployQt POST_BUILD
+    #COMMAND powershell -ExecutionPolicy Bypass -File "$<SHELL_PATH:${CMAKE_CURRENT_SOURCE_DIR}/runcommand.ps1>" "${WINDEPLOYQT_EXECUTABLE}" --no-translations "$<SHELL_PATH:$<TARGET_FILE:${atarget}>>"
+    # "cd ." command is used to force true command doing anything else in cases windeployqt fails
+    COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations "$<SHELL_PATH:$<TARGET_FILE:seamless_smb_service_lib>>" || cd .
+    COMMENT "Running windeployqt..."
+    )
+
+
 

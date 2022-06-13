@@ -3,7 +3,7 @@ project(seamless_smb_service)
 add_executable(seamless_smb_service)
 add_library(seamless_smb_service_lib STATIC)
 target_sources(seamless_smb_service PRIVATE "main.cpp")
-target_sources(seamless_smb_service_lib PRIVATE "seamless_smb_service.h" "seamless_smb_service.cpp" "daemon.h" "daemon.cpp")
+target_sources(seamless_smb_service_lib PRIVATE "seamless_smb_service.h" "seamless_smb_service.cpp" "daemon.h" "daemon.cpp" "logger.h" "logger.cpp")
 
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOMOC ON)

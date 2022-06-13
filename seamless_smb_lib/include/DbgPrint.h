@@ -9,20 +9,22 @@
 #include <string>
 #include <iostream>
 
+#include "seamless_smb_lib_export.h"
 //extern BOOL g_UseStdErr;
 //extern BOOL g_DebugMode;
 
 //void DbgPrint(LPCWSTR format, ...);
 
-class DbgPrint{
+class SEAMLESS_SMB_LIB_EXPORT DbgPrint{
 public:
  DbgPrint(bool UseStdErr , bool DebugMode);
+ virtual ~DbgPrint() = default;
 
- void print(LPCWSTR format, ...);
+ virtual void print(LPCWSTR format, ...);
 
  bool DebugMode() const;
 
-private:
+protected:
  bool m_UseStdErr;
  bool m_DebugMode;
 };

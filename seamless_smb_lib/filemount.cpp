@@ -8,13 +8,16 @@
 #include "fileops.h"
 #include "context.h"
 
-FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestderr, DOKAN_OPTIONS dokanOptions)
+FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestderr, DOKAN_OPTIONS dokanOptions, std::shared_ptr<DbgPrint> print)
 {
     memset(&m_dokanOptions,0,sizeof(DOKAN_OPTIONS));
 
     m_context = std::make_shared<Context>();
     m_context->globals = globals;
-    m_context->print = std::make_shared<DbgPrint>(usestderr,debug);
+    if(!print)
+        m_context->print = std::make_shared<DbgPrint>(usestderr,debug);
+    else
+        m_context->print = print;
     m_context->nodes = std::make_shared<Nodes>();
     m_context->winsec = std::make_shared<WinSec>( m_context->print);
 

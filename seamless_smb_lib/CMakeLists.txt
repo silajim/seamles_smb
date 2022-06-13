@@ -17,7 +17,7 @@ target_sources(seamless_smb_lib PRIVATE
     "filenode.h"
     "filesecurity.h"
     "filesecurity.cpp"
-    "DbgPrint.h"
+    "include/DbgPrint.h"
     "DbgPrint.cpp"
     "WinSec.cpp"
     "WinSec.h"
