@@ -22,6 +22,8 @@ public:
 
     ULONG GetNotElevatedSIDS(PSID *owner, PSID *group);
 
+    ULONG GetExeOwnerAndGroup(PSID *owner, PSID *group);
+
     NTSTATUS CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescriptor);
 
     void printSD(PSECURITY_DESCRIPTOR sd, int num=0);
