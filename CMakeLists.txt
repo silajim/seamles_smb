@@ -48,6 +48,7 @@ add_subdirectory(qt-solutions/qtservice/src)
 add_subdirectory(seamless_smb_common)
 add_subdirectory(seamless_smb_service)
 add_subdirectory(seamless_smb_service_tester)
+add_subdirectory(seamless_smb_service_controller)
 
 ################################################################################
 # Sub-projects
@@ -268,7 +269,7 @@ find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 
 
 add_custom_target(RunWideployQt ALL)
-add_dependencies(RunWideployQt seamless_smb_service seamless_smb_service_lib)
+add_dependencies(RunWideployQt seamless_smb_service seamless_smb_service_lib seamless_smb_service_controller)
 
 add_custom_command(TARGET RunWideployQt POST_BUILD
     #COMMAND powershell -ExecutionPolicy Bypass -File "$<SHELL_PATH:${CMAKE_CURRENT_SOURCE_DIR}/runcommand.ps1>" "${WINDEPLOYQT_EXECUTABLE}" --no-translations "$<SHELL_PATH:$<TARGET_FILE:${atarget}>>"
@@ -284,5 +285,9 @@ add_custom_command(TARGET RunWideployQt POST_BUILD
     COMMENT "Running windeployqt..."
     )
 
-
-
+add_custom_command(TARGET RunWideployQt POST_BUILD
+    #COMMAND powershell -ExecutionPolicy Bypass -File "$<SHELL_PATH:${CMAKE_CURRENT_SOURCE_DIR}/runcommand.ps1>" "${WINDEPLOYQT_EXECUTABLE}" --no-translations "$<SHELL_PATH:$<TARGET_FILE:${atarget}>>"
+    # "cd ." command is used to force true command doing anything else in cases windeployqt fails
+    COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations "$<SHELL_PATH:$<TARGET_FILE:seamless_smb_service_controller>>" --qmldir "$<SHELL_PATH:$<TARGET_PROPERTY:seamless_smb_service_controller,SOURCE_DIR>>" || cd .
+    COMMENT "Running windeployqt..."
+    )
