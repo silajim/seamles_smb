@@ -3,5 +3,6 @@
         <file>main.qml</file>
         <file>EditDialog.qml</file>
         <file>StackedTextField.qml</file>
+        <file>StackedTextEditor.qml</file>
     </qresource>
 </RCC>

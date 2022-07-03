@@ -147,7 +147,7 @@ Window {
     }
 
     Rectangle{
-//        color:"orange"
+        //        color:"orange"
 
         id:buttons
         height: 50
@@ -160,6 +160,17 @@ Window {
             id:row
 
             anchors.fill: parent
+
+            Button{
+                text: "New"
+                Layout.leftMargin: 10
+                Layout.rightMargin: 0
+                Layout.alignment: Qt.AlignLeft || Qt.AlignVCenter
+                onClicked: {
+                    eddial.editor = app.model.newMount();
+                    eddial.open();
+                }
+            }
 
             Button{
                 text: "Start"
