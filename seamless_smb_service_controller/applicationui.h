@@ -12,6 +12,8 @@
 #include "mountlistmodel.h"
 #include "mounteditor.h"
 
+#include "socket.h"
+
 class ApplicationUI : public QObject
 {
     Q_OBJECT
@@ -57,6 +59,8 @@ private:
     QSettings *settings=nullptr;
 
     MountListModel *model = nullptr;
+
+    Socket *sock=nullptr;
 
 
 };

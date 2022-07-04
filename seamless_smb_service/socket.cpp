@@ -49,7 +49,8 @@ void Socket::onReadyRead()
 
     QByteArray arr =  sock->readLine();
     QString command = arr;
-    if(command=="reload"){
+    qDebug() << "Read Command" << arr;
+    if(command=="reload\n"){
         //        QtConcurrent::run(this,&Daemon::reloadMounts);
         emit reloadMounts();
     }else if(command.startsWith("stop/")){

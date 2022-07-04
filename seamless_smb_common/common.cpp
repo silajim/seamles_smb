@@ -84,7 +84,7 @@ bool MountInfo::operator==(const MountInfo &other)
 
 bool MountInfo::operator!=(const MountInfo &other)
 {
-    return !operator==(other);
+    return !(operator==(other));
 }
 
 

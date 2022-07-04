@@ -109,6 +109,9 @@ Window {
                         width: implicitContentWidth + 10
                         padding: 0
                         text: "Start"
+                        onClicked: {
+
+                        }
                     }
                     Button{
                         width: implicitContentWidth + 10

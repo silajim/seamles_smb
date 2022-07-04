@@ -13,7 +13,7 @@ Dialog {
 //        app.model.editrejected();
         editor.isrejected();
     }
-    onClosed:  app.model.editrejected();
+//    onClosed:   editor.isrejected();
 
     standardButtons: Dialog.Ok | Dialog.Cancel
     GridLayout{

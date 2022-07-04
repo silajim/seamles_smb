@@ -200,6 +200,35 @@ void MountListModel::remove(QUuid id)
     }
 }
 
+void MountListModel::stop(QUuid id)
+{
+    beginResetModel();
+    for(int i=0;i<modelList.size();i++){
+         if(modelList[i].uuid == id){
+             modelList[i].enabled = false;
+             emit edited();
+             break;
+         }
+
+    }
+    endResetModel();
+
+}
+
+void MountListModel::start(QUuid id)
+{
+    beginResetModel();
+    for(int i=0;i<modelList.size();i++){
+         if(modelList[i].uuid == id){
+             modelList[i].enabled = true;
+             emit edited();
+             break;
+         }
+    }
+    endResetModel();
+
+}
+
 void MountListModel::editaccepted()
 {
     if(!editor)

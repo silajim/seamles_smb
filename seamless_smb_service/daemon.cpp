@@ -28,7 +28,7 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     settings = std::make_shared<QSettings>(path+"/mounts.ini", QSettings::IniFormat);
     qDebug() << "Daemon path" << path;
 
-    sock = new Socket(this);
+    sock = new Socket();
     sockThread = new QThread(this);
     sock->moveToThread(sockThread);
     sockThread->start();
@@ -56,11 +56,23 @@ Daemon::~Daemon()
 
 void Daemon::reloadMounts()
 {
+    qDebug() << Q_FUNC_INFO;
+    settings->sync();
     mlist mountlist;
     mountlist = settings->value("Mounts").value<mlist>();
 
     mlist addl , modifyl , rm;
     toaddModify(mountlist,addl,modifyl);
+
+    qDebug() << "Add list";
+    foreach(auto m , addl){
+        qDebug() << m.RootDirectory << " " << m.enabled << Qt::endl;
+    }
+    qDebug() << "Modify list";
+    foreach(auto m , modifyl){
+        qDebug() << m.RootDirectory << " " << m.enabled << Qt::endl;
+    }
+
     rm = toRemove(mountlist);
     remove(rm);
     add(addl);
@@ -149,7 +161,7 @@ void Daemon::add(MountInfo info)
 void Daemon::modify(mlist mod)
 {
     foreach(auto inf,mod){
-        modify(mod);
+        modify(inf);
     }
 }
 
@@ -178,7 +190,8 @@ void Daemon::modify(const MountInfo &info)
 void Daemon::mountAll()
 {
      foreach(auto mount, mounts){
-         mount.first->mount();
+         if(mount.second.enabled)
+             mount.first->mount();
      }
 }
 

@@ -2,8 +2,10 @@ project(seamless_smb_service)
 
 add_executable(seamless_smb_service)
 add_library(seamless_smb_service_lib STATIC)
+add_executable(seamless_smb_service_test)
 target_sources(seamless_smb_service PRIVATE "main.cpp")
 target_sources(seamless_smb_service_lib PRIVATE "seamless_smb_service.h" "seamless_smb_service.cpp" "daemon.h" "daemon.cpp" "logger.h" "logger.cpp" "socket.h" "socket.cpp")
+target_sources(seamless_smb_service_test PRIVATE "servicetestmain.cpp")
 
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOMOC ON)
@@ -25,6 +27,7 @@ target_include_directories(seamless_smb_service_lib PUBLIC ${CMAKE_CURRENT_SOURC
 target_link_libraries(seamless_smb_service_lib PUBLIC Qt5::Core Qt5::Network QtService seamless_smb_common seamless_smb_lib dokan2 user32)
 
 target_link_libraries(seamless_smb_service PRIVATE seamless_smb_service_lib )
+target_link_libraries(seamless_smb_service_test PRIVATE seamless_smb_service_lib )
 
 target_link_directories(seamless_smb_service_lib PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../lib)
 
@@ -34,4 +37,6 @@ target_compile_definitions(seamless_smb_service PRIVATE  $<CONFIG:Debug>:"_DEBUG
 
 #set_property(TARGET seamless_smb_service_lib PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 target_compile_definitions(seamless_smb_service_lib PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
+
+target_compile_definitions(seamless_smb_service_test PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
 

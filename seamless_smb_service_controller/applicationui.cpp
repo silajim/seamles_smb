@@ -2,6 +2,7 @@
 #include <QQmlContext>
 #include <QStandardPaths>
 
+#include <QThread>
 
 #include "common.h"
 
@@ -50,6 +51,8 @@ ApplicationUI::ApplicationUI(QObject *parent) : QObject(parent)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
     engine->load(url);
+
+//     sock = new Socket(this);
 }
 
 ApplicationUI::~ApplicationUI()
@@ -66,13 +69,27 @@ void ApplicationUI::isRunningTimerTimeout()
 {
     if(!isInstalled)
         return;
-    setIsRunning(service->isRunning());
+    qDebug() << "isRunningTimerTimeout";
+    bool run = service->isRunning();
+    if(run && !sock){
+        sock = new Socket(this);
+    }if(!run && sock){
+        sock->deleteLater();
+        sock = nullptr;
+    }
+
+    setIsRunning(run);
 }
 
 void ApplicationUI::onModelModified()
 {
     settings->setValue("Mounts",QVariant::fromValue(model->getModelList()));
     settings->sync();
+//    QThread::sleep(1);
+
+    if(sock){
+        sock->sendReload();
+    }
 }
 
 bool ApplicationUI::getIsInstalled() const

@@ -51,6 +51,8 @@ public:
 
 public slots:
     void remove(QUuid id);
+    void stop(QUuid id);
+    void start(QUuid id);
     MountEditor* edit(QUuid id);
     MountEditor* newMount();
 
