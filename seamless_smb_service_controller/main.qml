@@ -47,6 +47,8 @@ Window {
                 columns: 2
                 anchors.fill: parent
                 anchors.margins: 5
+
+
                 Label{
                     Layout.row: 0
                     Layout.column: 0
@@ -85,6 +87,12 @@ Window {
                     Layout.columnSpan: 1;
                     Layout.rowSpan: 1
                     spacing: 5
+                    Label{
+
+                        text: running ? "Running" : "Not running"
+                        color: running ? "Green" : "Red"
+                    }
+
                     Label{
                         text:  "CaseSensitive:"  + CaseSensitive
                     }

@@ -7,6 +7,8 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 
+#include "mutex"
+
 class Daemon;
 
 class Socket : public QObject
@@ -15,6 +17,9 @@ class Socket : public QObject
 public:
     explicit Socket(QObject *parent = nullptr);
     ~Socket();
+
+public slots:
+    void sendStatus(QUuid id, bool running);
 
 signals:
     void reloadMounts();
@@ -26,12 +31,14 @@ signals:
 
 private:
     QLocalServer *lsocket=nullptr;
-    QList<QLocalSocket*> sockets;
+    QLocalSocket* sockets=nullptr;
 
+    std::mutex mutex;
 private slots:
     void onnewConnection();
     void onaboutToClose();
     void onReadyRead();
+    void sendStatusSlot(QUuid id, bool running);
 
 };
 

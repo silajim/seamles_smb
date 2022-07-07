@@ -11,7 +11,7 @@ typedef QList<MountInfo> mlist;
 
 ApplicationUI::ApplicationUI(QObject *parent) : QObject(parent)
 {
-    engine = new QQmlApplicationEngine(this);    
+    engine = new QQmlApplicationEngine(this);
     engine->rootContext()->setContextProperty("app",this);
     qmlRegisterInterface<MountListModel>("MountListModel",1);
     qmlRegisterInterface<MountEditor>("MountEditor",1);
@@ -51,13 +51,19 @@ ApplicationUI::ApplicationUI(QObject *parent) : QObject(parent)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
     engine->load(url);
-
-//     sock = new Socket(this);
 }
 
 ApplicationUI::~ApplicationUI()
 {
     delete service;
+    if(sock){
+        sock->close();
+        sock->deleteLater();
+        sockThread->quit();
+        sockThread->exit();
+        sock = nullptr;
+        sockThread = nullptr;
+    }
 }
 
 bool ApplicationUI::getIsRunning() const
@@ -69,13 +75,21 @@ void ApplicationUI::isRunningTimerTimeout()
 {
     if(!isInstalled)
         return;
-    qDebug() << "isRunningTimerTimeout";
     bool run = service->isRunning();
     if(run && !sock){
-        sock = new Socket(this);
+        qDebug() << "Create socket";
+        sockThread = new QThread(this);
+        sock = new Socket();
+        sock->moveToThread(sockThread);
+        sockThread->start();
+        connect(sock,&Socket::status,model,&MountListModel::setRunning);
     }if(!run && sock){
+        qDebug() << "delete Socket";
+        sock->close();
         sock->deleteLater();
+        sockThread->exit();
         sock = nullptr;
+        sockThread = nullptr;
     }
 
     setIsRunning(run);
@@ -85,7 +99,6 @@ void ApplicationUI::onModelModified()
 {
     settings->setValue("Mounts",QVariant::fromValue(model->getModelList()));
     settings->sync();
-//    QThread::sleep(1);
 
     if(sock){
         sock->sendReload();

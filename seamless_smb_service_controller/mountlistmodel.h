@@ -7,7 +7,31 @@
 #include "common.h"
 #include "mounteditor.h"
 
+#include <QMutex>
+#include <QMutexLocker>
+
 typedef QList<MountInfo> mlist;
+
+
+struct MountInfoExt:public MountInfo{
+    MountInfoExt() = default;
+    MountInfoExt(MountInfo &info):MountInfo(info){
+
+    };
+     MountInfoExt(const MountInfo &info):MountInfo(info){
+
+     };
+
+    bool operator==(const MountInfoExt &other){
+        return MountInfo::operator==(other);
+    }
+    bool operator!=(const MountInfoExt &other){
+        return MountInfo::operator!=(other);
+    }
+    bool running = false;
+};
+
+typedef QList<MountInfoExt> mlistExt;
 
 class MountListModel : public QAbstractListModel
 {
@@ -30,7 +54,8 @@ public:
         debug,
         singlethreaded,
         options,
-        id
+        id,
+        running
     };
 
 
@@ -47,7 +72,7 @@ public:
 
 //    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
 
-    const mlist &getModelList() const;
+    const mlist getModelList() const;
 
 public slots:
     void remove(QUuid id);
@@ -56,10 +81,14 @@ public slots:
     MountEditor* edit(QUuid id);
     MountEditor* newMount();
 
+    void setRunning(QUuid id, bool running);
+
 private:
-    mlist modelList;
+    mlistExt modelList;
     MountOptionsConverter converter;
     MountEditor *editor=nullptr;
+
+    QMutex mutex;
 
 private slots:
     void editaccepted();

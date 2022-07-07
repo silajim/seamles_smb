@@ -37,11 +37,14 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     connect(sock,&Socket::mountAll,this,&Daemon::mountAll);
 
 
-    statTimer = settings->value("statTimer").toUInt();
+    statTimer = settings->value("statTimer",5000).toUInt();
+    connect(&stats,&QTimer::timeout,this,&Daemon::checkStatus);
 
 
     DokanInit();
     reloadMounts();
+
+    stats.start(statTimer);
 
 }
 
@@ -66,11 +69,11 @@ void Daemon::reloadMounts()
 
     qDebug() << "Add list";
     foreach(auto m , addl){
-        qDebug() << m.RootDirectory << " " << m.enabled << Qt::endl;
+        qDebug() << m.RootDirectory << " " << m.enabled;
     }
     qDebug() << "Modify list";
     foreach(auto m , modifyl){
-        qDebug() << m.RootDirectory << " " << m.enabled << Qt::endl;
+        qDebug() << m.RootDirectory << " " << m.enabled;
     }
 
     rm = toRemove(mountlist);
@@ -237,4 +240,21 @@ void Daemon::MountInfoToGlobal(MountInfo info, std::shared_ptr<Globals> &g, DOKA
     dokanOptions.MountPoint = g->MountPoint().data();
     dokanOptions.Options = info.options;
     dokanOptions.SingleThread = info.singlethreaded;
+}
+
+void Daemon::checkStatus()
+{
+    qDebug() << "CheckStatus";
+    QtConcurrent::run([this](){
+        foreach(auto amount, mounts){
+            qDebug() << amount.second.RootDirectory << " " << amount.second.enabled;
+
+            bool running = amount.first->isRunning();
+            sock->sendStatus(amount.second.uuid,running);
+
+            if(amount.second.enabled && amount.second.keepAlive && !running){
+                mount(amount.second.uuid);
+            }
+        }
+    });
 }

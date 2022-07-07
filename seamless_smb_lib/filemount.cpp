@@ -124,6 +124,7 @@ bool FileMount::isRunning()
             DokanCloseHandle(handle);
             handle = NULL;
         }
+        return running;
 
     }
     return false;

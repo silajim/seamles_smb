@@ -1,24 +1,30 @@
 #include "mountlistmodel.h"
 
 #include <QRegularExpression>
+#include <QDebug>
 
 
 MountListModel::MountListModel(mlist infolist,QObject *parent) : QAbstractListModel(parent)
 {
-    modelList = infolist;
+    foreach(auto info , infolist){
+        modelList << info;
+    }
+
 }
 
 int MountListModel::rowCount(const QModelIndex &parent) const
 {
+//    QMutexLocker lk(&mutex); QMutexLocker lk(&mutex);
     return modelList.size();
 }
 
 QVariant MountListModel::data(const QModelIndex &index, int role) const
 {
+//    QMutexLocker lk(&mutex);
     if(index.row() > modelList.size())
         return QVariant();
 
-    MountInfo info = modelList[index.row()];
+    MountInfoExt info = modelList[index.row()];
     switch(role){
     case rootdirectory:
         return info.RootDirectory;
@@ -56,6 +62,9 @@ QVariant MountListModel::data(const QModelIndex &index, int role) const
     case id:
         return info.uuid;
         break;
+    case running:
+        return info.running;
+        break;
     default:
         return QVariant();
         break;
@@ -66,7 +75,7 @@ QVariant MountListModel::data(const QModelIndex &index, int role) const
 bool MountListModel::insertRows(int row, int count, const QModelIndex &parent)
 {
     beginInsertRows(parent,modelList.size(),modelList.size());
-    modelList << MountInfo();
+    modelList << MountInfoExt();
     endInsertRows();
     return true;
 }
@@ -98,6 +107,7 @@ QHash<int, QByteArray> MountListModel::roleNames() const
     names[singlethreaded] = "singlethreaded";
     names[options] = "options";
     names[id] = "id";
+    names[running] = "running";
 
     return names;
 }
@@ -153,6 +163,7 @@ QHash<int, QByteArray> MountListModel::roleNames() const
 
 MountEditor *MountListModel::edit(QUuid id)
 {
+     QMutexLocker lk(&mutex);
     if(editor!=nullptr){
         return nullptr;
     }
@@ -170,6 +181,7 @@ MountEditor *MountListModel::edit(QUuid id)
 
 MountEditor *MountListModel::newMount()
 {
+     QMutexLocker lk(&mutex);
     if(editor!=nullptr){
         return nullptr;
     }
@@ -181,13 +193,34 @@ MountEditor *MountListModel::newMount()
 
 }
 
-const mlist &MountListModel::getModelList() const
+const mlist MountListModel::getModelList() const
 {
-    return modelList;
+    mlist list;
+    foreach(auto info , modelList){
+        list << info;
+    }
+
+    return list;
+}
+
+void MountListModel::setRunning(QUuid id, bool running)
+{
+    QMutexLocker lk(&mutex);
+//    qDebug() << Q_FUNC_INFO << id.toString() << running;
+    for(int i=0;i<modelList.size();i++){
+        if(modelList[i].uuid == id){
+            if(modelList[i].running != running){
+                beginResetModel();
+                modelList[i].running = running;
+                endResetModel();
+            }
+        }
+    }
 }
 
 void MountListModel::remove(QUuid id)
 {
+//     QMutexLocker lk(&mutex);
     for(int i=0;i<modelList.size();i++){
         if(modelList[i].uuid == id){
             QModelIndex model = QModelIndex();
@@ -202,13 +235,14 @@ void MountListModel::remove(QUuid id)
 
 void MountListModel::stop(QUuid id)
 {
+     QMutexLocker lk(&mutex);
     beginResetModel();
     for(int i=0;i<modelList.size();i++){
-         if(modelList[i].uuid == id){
-             modelList[i].enabled = false;
-             emit edited();
-             break;
-         }
+        if(modelList[i].uuid == id){
+            modelList[i].enabled = false;
+            emit edited();
+            break;
+        }
 
     }
     endResetModel();
@@ -217,13 +251,14 @@ void MountListModel::stop(QUuid id)
 
 void MountListModel::start(QUuid id)
 {
+     QMutexLocker lk(&mutex);
     beginResetModel();
     for(int i=0;i<modelList.size();i++){
-         if(modelList[i].uuid == id){
-             modelList[i].enabled = true;
-             emit edited();
-             break;
-         }
+        if(modelList[i].uuid == id){
+            modelList[i].enabled = true;
+            emit edited();
+            break;
+        }
     }
     endResetModel();
 
@@ -231,6 +266,7 @@ void MountListModel::start(QUuid id)
 
 void MountListModel::editaccepted()
 {
+     QMutexLocker lk(&mutex);
     if(!editor)
         return;
 
@@ -255,6 +291,7 @@ void MountListModel::editaccepted()
 
 void MountListModel::editrejected()
 {
+     QMutexLocker lk(&mutex);
     if(!editor)
         return;
     editor->deleteLater();

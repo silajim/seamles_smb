@@ -61,6 +61,7 @@ private:
     MountListModel *model = nullptr;
 
     Socket *sock=nullptr;
+    QThread *sockThread = nullptr;
 
 
 };

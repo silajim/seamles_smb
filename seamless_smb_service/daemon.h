@@ -48,6 +48,8 @@ private:
 
     void MountInfoToGlobal(MountInfo info, std::shared_ptr<Globals> &g, DOKAN_OPTIONS &dokanOptions);
 
+
+
     QList<QPair<std::shared_ptr<FileMount>,MountInfo>> mounts;
     std::shared_ptr<QSettings> settings;
 //    QLocalServer *lsocket=nullptr;
@@ -60,6 +62,9 @@ private:
     Socket *sock=nullptr;
 
     QThread *sockThread=nullptr;
+
+private slots:
+    void checkStatus();
 
 };
 
