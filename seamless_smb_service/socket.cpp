@@ -84,9 +84,9 @@ void Socket::onReadyRead()
         emit reloadMounts();
     }else if(command.startsWith("stop/")){
         QString suid = command.remove("stop/");
-        emit unmount(suid);
+        emit unmount(QUuid(suid));
     }else if(command.startsWith("start/")){
         QString suid = command.remove("start/");
-        emit mount(suid);
+        emit mount(QUuid(suid));
     }
 }

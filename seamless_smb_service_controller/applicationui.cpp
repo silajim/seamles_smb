@@ -16,7 +16,8 @@ ApplicationUI::ApplicationUI(QObject *parent) : QObject(parent)
     qmlRegisterInterface<MountListModel>("MountListModel",1);
     qmlRegisterInterface<MountEditor>("MountEditor",1);
 
-    qRegisterMetaTypeStreamOperators<mlist>("mlist");
+    qRegisterMetaType<mlist>("mlist");
+//    qRegisterMetaTypeStreamOperators<mlist>("mlist");
 
     qApp->setOrganizationDomain("Seamless smb");
     qApp->setApplicationName("seamless_smb_service");

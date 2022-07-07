@@ -10,10 +10,10 @@ set_target_properties(seamless_smb_service_tester PROPERTIES AUTOMOC TRUE)
 set_target_properties(seamless_smb_service_tester PROPERTIES AUTOUIC TRUE)
 set_target_properties(seamless_smb_service_tester PROPERTIES AUTORCC TRUE)
 
-find_package(Qt5 COMPONENTS Core Network REQUIRED)
+find_package(Qt6 COMPONENTS Core Network REQUIRED)
 
 target_include_directories(seamless_smb_service_tester PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include/ ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(seamless_smb_service_tester PUBLIC Qt5::Core Qt5::Network QtService seamless_smb_service_lib)
+target_link_libraries(seamless_smb_service_tester PUBLIC Qt6::Core Qt6::Network QtService seamless_smb_service_lib)
 
 #set_property(TARGET seamless_smb_service_tester PROPERTY  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 target_compile_definitions(seamless_smb_service_tester PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )

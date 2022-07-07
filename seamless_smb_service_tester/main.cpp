@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     }
 
 //    qRegisterMetaTypeStreamOperators<MountInfo>("MountInfo");
-    qRegisterMetaTypeStreamOperators<mlist>("mlist");
+//    qRegisterMetaTypeStreamOperators<mlist>("mlist");
 
 
     qApp->setOrganizationDomain("Seamless smb");

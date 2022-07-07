@@ -6,7 +6,7 @@ project(seamless_smb  C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/lib/cmake")
 
-find_package(Qt5 COMPONENTS Core REQUIRED)
+find_package(Qt6 COMPONENTS Core REQUIRED)
 
 #add_subdirectory(rtl)
 
@@ -263,7 +263,7 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
 endif()
 
 
-get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
+get_target_property(_qmake_executable Qt6::qmake IMPORTED_LOCATION)
 get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 

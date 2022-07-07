@@ -21,10 +21,10 @@ set_target_properties(seamless_smb_service_lib PROPERTIES AUTOMOC TRUE)
 set_target_properties(seamless_smb_service_lib PROPERTIES AUTOUIC TRUE)
 set_target_properties(seamless_smb_service_lib PROPERTIES AUTORCC TRUE)
 
-find_package(Qt5 COMPONENTS Core Network REQUIRED)
+find_package(Qt6 COMPONENTS Core Network REQUIRED)
 
 target_include_directories(seamless_smb_service_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../include/ ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(seamless_smb_service_lib PUBLIC Qt5::Core Qt5::Network QtService seamless_smb_common seamless_smb_lib dokan2 user32)
+target_link_libraries(seamless_smb_service_lib PUBLIC Qt6::Core Qt6::Network QtService seamless_smb_common seamless_smb_lib dokan2 user32)
 
 target_link_libraries(seamless_smb_service PRIVATE seamless_smb_service_lib )
 target_link_libraries(seamless_smb_service_test PRIVATE seamless_smb_service_lib )

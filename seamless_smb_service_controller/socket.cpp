@@ -55,7 +55,7 @@ void Socket::onReadyRead(){
 
         if(command.startsWith("STATUS")){
             QStringList st = command.split(" ");
-            emit status(st[1],st[2].toInt());
+            emit status(QUuid(st[1]),st[2].toInt());
         }
         qint64 bytes = localsocket->bytesAvailable();
         if(bytes>0 && !localsocket->canReadLine()){

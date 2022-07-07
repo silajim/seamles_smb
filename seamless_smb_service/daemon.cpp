@@ -9,6 +9,7 @@
 
 Daemon::Daemon(QObject *parent):QObject(parent)
 {
+    qRegisterMetaType<mlist>("mlist");
     QStringList plist = QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
     QString path; //= QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     foreach(QString p, plist ){
@@ -24,7 +25,7 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     }
 
 
-    qRegisterMetaTypeStreamOperators<mlist>("mlist");
+//    qRegisterMetaTypeStreamOperators<mlist>("mlist");
     settings = std::make_shared<QSettings>(path+"/mounts.ini", QSettings::IniFormat);
     qDebug() << "Daemon path" << path;
 
@@ -157,7 +158,7 @@ void Daemon::add(MountInfo info)
 
     std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions,log);
 
-    auto pair = qMakePair<std::shared_ptr<FileMount>,MountInfo>(filemount,info);
+    auto pair = qMakePair(filemount,info);
     mounts << pair;
 }
 
@@ -182,7 +183,7 @@ void Daemon::modify(const MountInfo &info)
 
             std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions);
 
-            auto pair = qMakePair<std::shared_ptr<FileMount>,MountInfo>(filemount,info);
+            auto pair = qMakePair(filemount,info);
 
             mounts.replace(i,pair);
             break;
