@@ -1,5 +1,5 @@
-#ifndef SOCKET_H
-#define SOCKET_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <QObject>
 
@@ -7,16 +7,16 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 
-#include "mutex"
+#include <mutex>
 
 class Daemon;
 
-class Socket : public QObject
+class Server : public QObject
 {
     Q_OBJECT
 public:
-    explicit Socket(QObject *parent = nullptr);
-    ~Socket();
+    explicit Server(QObject *parent = nullptr);
+    ~Server();
 
 public slots:
     void sendStatus(QUuid id, bool running);

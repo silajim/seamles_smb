@@ -12,7 +12,7 @@
 #include "mountlistmodel.h"
 #include "mounteditor.h"
 
-#include "socket.h"
+#include "client.h"
 
 class ApplicationUI : public QObject
 {
@@ -60,7 +60,7 @@ private:
 
     MountListModel *model = nullptr;
 
-    Socket *sock=nullptr;
+    Client *sock=nullptr;
     QThread *sockThread = nullptr;
 
 

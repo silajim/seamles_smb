@@ -25,8 +25,8 @@ set(PROJECT_SOURCES
         "mountlistmodel.cpp"
         "mounteditor.h"
         "mounteditor.cpp"
-        "socket.h"
-        "socket.cpp"
+        "client.h"
+        "client.cpp"
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

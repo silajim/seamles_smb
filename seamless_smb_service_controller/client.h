@@ -1,5 +1,5 @@
-#ifndef SOCKET_H
-#define SOCKET_H
+#ifndef CLIENT_H
+#define CLIENT_H
 
 #include <QObject>
 #include <QLocalSocket>
@@ -7,11 +7,11 @@
 #include <QMutex>
 #include <QMutexLocker>
 
-class Socket : public QObject
+class Client : public QObject
 {
     Q_OBJECT
 public:
-    explicit Socket(QObject *parent = nullptr);
+    explicit Client(QObject *parent = nullptr);
     void close();
 
 public slots:

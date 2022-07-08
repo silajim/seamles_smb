@@ -29,13 +29,13 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     settings = std::make_shared<QSettings>(path+"/mounts.ini", QSettings::IniFormat);
     qDebug() << "Daemon path" << path;
 
-    sock = new Socket();
+    sock = new Server();
     sockThread = new QThread(this);
     sock->moveToThread(sockThread);
     sockThread->start();
-    connect(sock,&Socket::reloadMounts,this,&Daemon::reloadMounts);
-    connect(sock,&Socket::mount,this,&Daemon::mount);
-    connect(sock,&Socket::mountAll,this,&Daemon::mountAll);
+    connect(sock,&Server::reloadMounts,this,&Daemon::reloadMounts);
+    connect(sock,&Server::mount,this,&Daemon::mount);
+    connect(sock,&Server::mountAll,this,&Daemon::mountAll);
 
 
     statTimer = settings->value("statTimer",5000).toUInt();

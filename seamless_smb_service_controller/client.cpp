@@ -1,28 +1,28 @@
-#include "socket.h"
+#include "client.h"
 
-Socket::Socket(QObject *parent) : QObject(parent)
+Client::Client(QObject *parent) : QObject(parent)
 {
     qRegisterMetaType<QLocalSocket::LocalSocketError>("QLocalSocket::LocalSocketError");
     qRegisterMetaType<QLocalSocket::LocalSocketState>("QLocalSocket::LocalSocketState");
     localsocket = new QLocalSocket(this);
 //    localsocket->setReadBufferSize(16000);
-    connect(localsocket,&QLocalSocket::errorOccurred,this,&Socket::onSocketError);
+    connect(localsocket,&QLocalSocket::errorOccurred,this,&Client::onSocketError);
     connect(localsocket,&QLocalSocket::stateChanged,[](QLocalSocket::LocalSocketState state){
         qDebug() << "SOCKET STATE" << state;
     });
     localsocket->connectToServer("seamless_smb_service");
 
-    connect(localsocket,&QLocalSocket::readyRead,this,&Socket::onReadyRead);
+    connect(localsocket,&QLocalSocket::readyRead,this,&Client::onReadyRead);
 }
 
-void Socket::close()
+void Client::close()
 {
      QMutexLocker lk(&mutex);
     localsocket->close();
     localsocket->waitForDisconnected(3000);
 }
 
-void Socket::sendReload()
+void Client::sendReload()
 {
      QMutexLocker lk(&mutex);
     if(localsocket->state() == QLocalSocket::LocalSocketState::ConnectedState){
@@ -32,12 +32,12 @@ void Socket::sendReload()
     }
 }
 
-void Socket::onSocketError(QLocalSocket::LocalSocketError error)
+void Client::onSocketError(QLocalSocket::LocalSocketError error)
 {
     qDebug() << Q_FUNC_INFO << error;
 }
 
-void Socket::onReadyRead(){
+void Client::onReadyRead(){
 
     QMutexLocker lk(&mutex);
 //    bool looped = false;

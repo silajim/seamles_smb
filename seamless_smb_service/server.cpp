@@ -1,18 +1,18 @@
-#include "socket.h"
+#include "server.h"
 #include <QUuid>
 #include <QMetaObject>
 
 #include <thread>
 
-Socket::Socket(QObject *parent) : QObject(parent)
+Server::Server(QObject *parent) : QObject(parent)
 {
     lsocket = new QLocalServer(this);
-    connect(lsocket,&QLocalServer::newConnection,this,&Socket::onnewConnection);
+    connect(lsocket,&QLocalServer::newConnection,this,&Server::onnewConnection);
     lsocket->listen("seamless_smb_service");
 
 }
 
-Socket::~Socket()
+Server::~Server()
 {
 //    foreach(auto sock , sockets){
 //        sock->close();
@@ -21,12 +21,12 @@ Socket::~Socket()
     sockets->deleteLater();
 }
 
-void Socket::sendStatus(QUuid id, bool running)
+void Server::sendStatus(QUuid id, bool running)
 {
     QMetaObject::invokeMethod(this,"sendStatusSlot",Qt::QueuedConnection,Q_ARG(QUuid,id),Q_ARG(bool,running));
 }
 
-void Socket::sendStatusSlot(QUuid id, bool running)
+void Server::sendStatusSlot(QUuid id, bool running)
 {
     std::lock_guard<std::mutex> lg(mutex);
     if(!sockets){
@@ -44,17 +44,17 @@ void Socket::sendStatusSlot(QUuid id, bool running)
     qDebug() << "Status wrote" << msg << "bytes" << bytes;
 }
 
-void Socket::onnewConnection()
+void Server::onnewConnection()
 {
     if(lsocket->hasPendingConnections()){
         QLocalSocket *sock = lsocket->nextPendingConnection();
-        connect(sock,&QLocalSocket::aboutToClose,this,&Socket::onaboutToClose);
-        connect(sock,&QLocalSocket::readyRead,this,&Socket::onReadyRead);
+        connect(sock,&QLocalSocket::aboutToClose,this,&Server::onaboutToClose);
+        connect(sock,&QLocalSocket::readyRead,this,&Server::onReadyRead);
         sockets = sock;
     }
 }
 
-void Socket::onaboutToClose()
+void Server::onaboutToClose()
 {
     QLocalSocket *sock = qobject_cast<QLocalSocket*>(sender());
     if(!sock)
@@ -70,7 +70,7 @@ void Socket::onaboutToClose()
 
 }
 
-void Socket::onReadyRead()
+void Server::onReadyRead()
 {
     QLocalSocket *sock = qobject_cast<QLocalSocket*>(sender());
     if(!sock)

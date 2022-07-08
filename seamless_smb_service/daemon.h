@@ -5,7 +5,7 @@
 #include "common.h"
 #include "filemount.h"
 #include "globals.h"
-#include "socket.h"
+#include "server.h"
 
 #include <QList>
 #include <QMap>
@@ -59,7 +59,7 @@ private:
     unsigned int statTimer=0;
     QTimer stats;
 
-    Socket *sock=nullptr;
+    Server *sock=nullptr;
 
     QThread *sockThread=nullptr;
 

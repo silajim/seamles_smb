@@ -4,7 +4,7 @@ add_executable(seamless_smb_service)
 add_library(seamless_smb_service_lib STATIC)
 add_executable(seamless_smb_service_test)
 target_sources(seamless_smb_service PRIVATE "main.cpp")
-target_sources(seamless_smb_service_lib PRIVATE "seamless_smb_service.h" "seamless_smb_service.cpp" "daemon.h" "daemon.cpp" "logger.h" "logger.cpp" "socket.h" "socket.cpp")
+target_sources(seamless_smb_service_lib PRIVATE "seamless_smb_service.h" "seamless_smb_service.cpp" "daemon.h" "daemon.cpp" "logger.h" "logger.cpp" "server.h" "server.cpp")
 target_sources(seamless_smb_service_test PRIVATE "servicetestmain.cpp")
 
 set(CMAKE_AUTORCC ON)

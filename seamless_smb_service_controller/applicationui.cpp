@@ -80,10 +80,10 @@ void ApplicationUI::isRunningTimerTimeout()
     if(run && !sock){
         qDebug() << "Create socket";
         sockThread = new QThread(this);
-        sock = new Socket();
+        sock = new Client();
         sock->moveToThread(sockThread);
         sockThread->start();
-        connect(sock,&Socket::status,model,&MountListModel::setRunning);
+        connect(sock,&Client::status,model,&MountListModel::setRunning);
     }if(!run && sock){
         qDebug() << "delete Socket";
         sock->close();
