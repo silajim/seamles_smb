@@ -9,7 +9,7 @@
 
 #include <comdef.h>
 
-Logger::Logger(bool debug):DbgPrint(debug,false)
+Logger::Logger(QString logpath,bool debug):DbgPrint(debug,false), m_logpath(logpath)
 {
 
 }
@@ -41,7 +41,7 @@ void Logger::print(LPCWSTR format,...)
     s += "] ";
 
     if (!f) {
-        f = new QFile("C:/debuglog.txt");
+        f = new QFile(m_logpath);
         if (!f->open(QIODevice::WriteOnly | QIODevice::Append)) {
             delete f;
             f = 0;

@@ -4,6 +4,8 @@
 #include <QStandardPaths>
 #include <QUrl>
 #include <QByteArray>
+#include <QCoreApplication>
+#include <QDir>
 
 #include <QtConcurrent/QtConcurrentRun>
 
@@ -25,7 +27,7 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     }
 
 
-//    qRegisterMetaTypeStreamOperators<mlist>("mlist");
+    //    qRegisterMetaTypeStreamOperators<mlist>("mlist");
     settings = std::make_shared<QSettings>(path+"/mounts.ini", QSettings::IniFormat);
     qDebug() << "Daemon path" << path;
 
@@ -149,12 +151,16 @@ void Daemon::add(mlist _add)
 
 void Daemon::add(MountInfo info)
 {
+    qDebug() << Q_FUNC_INFO;
     DOKAN_OPTIONS dokanOptions;
     std::shared_ptr<Globals> globals;
 
     MountInfoToGlobal(info,globals,dokanOptions);
 
-    std::shared_ptr<Logger> log = std::make_shared<Logger>(info.debug);
+    QString savePath  = QCoreApplication::applicationDirPath()+"/"+info.RootDirectory.replace("\\","_")+".log";
+    qDebug() << "SAVE LOGGER" << savePath;
+
+    std::shared_ptr<Logger> log = std::make_shared<Logger>(savePath,info.debug);
 
     std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions,log);
 
@@ -193,10 +199,11 @@ void Daemon::modify(const MountInfo &info)
 
 void Daemon::mountAll()
 {
-     foreach(auto mount, mounts){
-         if(mount.second.enabled)
-             mount.first->mount();
-     }
+    foreach(auto mount, mounts){
+        QDir dir(mount.second.RootDirectory);
+        if(dir.exists() && mount.second.enabled)
+            mount.first->mount();
+    }
 }
 
 void Daemon::unmountAll()

@@ -7,7 +7,7 @@
 class Logger:public DbgPrint
 {
 public:
-    Logger(bool debug);
+    Logger(QString logpath,bool debug);
     ~Logger();
 
     // DbgPrint interface
@@ -16,6 +16,7 @@ public:
 
 private:
     QFile* f = nullptr;
+    QString m_logpath = "C:/debuglog.txt";
 };
 
 #endif // LOGGER_H
