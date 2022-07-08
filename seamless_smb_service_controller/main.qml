@@ -207,7 +207,7 @@ Window {
                 //                Layout.leftMargin: 10
                 Layout.alignment: Qt.AlignLeft || Qt.AlignVCenter
 
-                onClicked: app.install()
+                onClicked: app.installService()
             }
             Button{
                 text: "Uninstall"
@@ -215,7 +215,7 @@ Window {
                 //                Layout.leftMargin: 10
                 Layout.alignment: Qt.AlignLeft || Qt.AlignVCenter
 
-                onClicked: app.uninstall()
+                onClicked: app.uninstallService()
             }
 
             Item{
