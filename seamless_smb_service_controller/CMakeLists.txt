@@ -30,7 +30,7 @@ set(PROJECT_SOURCES
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(seamless_smb_service_controller
+    qt_add_executable(seamless_smb_service_controller WIN32
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
@@ -48,7 +48,8 @@ set_target_properties(seamless_smb_service_controller PROPERTIES AUTOUIC TRUE)
 set_target_properties(seamless_smb_service_controller PROPERTIES AUTORCC TRUE)
 
 target_compile_definitions(seamless_smb_service_controller PRIVATE $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>)
-target_link_libraries(seamless_smb_service_controller PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick QtService seamless_smb_common seamless_smb_service_lib)
+target_link_libraries(seamless_smb_service_controller PUBLIC  Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Quick QtService seamless_smb_common seamless_smb_service_lib)
+SET_TARGET_PROPERTIES(seamless_smb_service_controller PROPERTIES LINK_FLAGS    "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\"")
 
 set_target_properties(seamless_smb_service_controller PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
