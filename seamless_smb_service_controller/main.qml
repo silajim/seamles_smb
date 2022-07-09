@@ -7,7 +7,7 @@ Window {
     width: 640
     height: 480
     visible: true
-    title: qsTr("Hello World")
+    title: qsTr("SMB Controller")
 
     EditDialog{
         id:eddial;
@@ -118,13 +118,16 @@ Window {
                         padding: 0
                         text: "Start"
                         onClicked: {
-
+                            app.model.start(model.id)
                         }
                     }
                     Button{
                         width: implicitContentWidth + 10
                         padding: 0
                         text: "Stop"
+                        onClicked: {
+                            app.model.stop(model.id)
+                        }
                     }
                     Button{
                         width: implicitContentWidth + 10
