@@ -4,5 +4,6 @@
         <file>EditDialog.qml</file>
         <file>StackedTextField.qml</file>
         <file>StackedTextEditor.qml</file>
+        <file>qtquickcontrols2.conf</file>
     </qresource>
 </RCC>
