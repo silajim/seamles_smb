@@ -37,10 +37,11 @@ void seamless_smb_service::start()
 {
     if(!daemon && !dthread){
 //        qInstallMessageHandler(myMessageHandler);
-        daemon = new Daemon(this);
+        daemon = new Daemon();
         dthread = new QThread(this);
         connect(dthread,&QThread::finished,dthread,&QThread::deleteLater);
         daemon->moveToThread(dthread);
+        dthread->start();
     }
 }
 
@@ -49,6 +50,7 @@ void seamless_smb_service::stop()
     if(daemon && dthread){
         connect(daemon,&QObject::destroyed,dthread,&QThread::quit);
         daemon->deleteLater();
+        dthread->exit();
         daemon = nullptr;
         dthread = nullptr;
     }
