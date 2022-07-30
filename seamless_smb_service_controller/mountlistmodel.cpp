@@ -224,7 +224,10 @@ void MountListModel::remove(QUuid id)
     for(int i=0;i<modelList.size();i++){
         if(modelList[i].uuid == id){
             QModelIndex model = QModelIndex();
-            beginRemoveRows(model,i,1);
+            if(i==0 || i == modelList.size()-1){
+                beginRemoveRows(model,i,i);
+            }else
+                beginRemoveRows(model,i,i);
             modelList.removeAt(i);
             endRemoveRows();
             emit edited();
