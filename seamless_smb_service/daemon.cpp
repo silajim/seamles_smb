@@ -53,6 +53,7 @@ Daemon::Daemon(QObject *parent):QObject(parent)
 
 Daemon::~Daemon()
 {
+    qDebug() << Q_FUNC_INFO;
     disconnect();
     sock->deleteLater();
     sockThread->exit();
@@ -70,20 +71,20 @@ void Daemon::reloadMounts()
     mlist addl , modifyl , rm;
     toaddModify(mountlist,addl,modifyl);
 
-    qDebug() << "Add list";
-    foreach(auto m , addl){
-        qDebug() << m.RootDirectory << " " << m.enabled;
-    }
-    qDebug() << "Modify list";
-    foreach(auto m , modifyl){
-        qDebug() << m.RootDirectory << " " << m.enabled;
-    }
+//    qDebug() << "Add list";
+//    foreach(auto m , addl){
+//        qDebug() << m.RootDirectory << " " << m.enabled;
+//    }
+//    qDebug() << "Modify list";
+//    foreach(auto m , modifyl){
+//        qDebug() << m.RootDirectory << " " << m.enabled;
+//    }
 
     rm = toRemove(mountlist);
     remove(rm);
     add(addl);
     modify(modifyl);
-    qDebug() << "Mount all";
+//    qDebug() << "Mount all";
     mountAll();
 }
 
@@ -252,16 +253,18 @@ void Daemon::MountInfoToGlobal(MountInfo info, std::shared_ptr<Globals> &g, DOKA
 
 void Daemon::checkStatus()
 {
-    qDebug() << "CheckStatus";
-    QtConcurrent::run([this](){
+//    qDebug() << "CheckStatus";
+    QFuture<void> f = QtConcurrent::run([this](){
         foreach(auto amount, mounts){
-            qDebug() << amount.second.RootDirectory << " " << amount.second.enabled;
+//            qDebug() << amount.second.RootDirectory << " " << amount.second.enabled;
 
             bool running = amount.first->isRunning();
             sock->sendStatus(amount.second.uuid,running);
 
             if(amount.second.enabled && amount.second.keepAlive && !running){
+                qDebug() << "ReMounting" << amount.second.RootDirectory;
                 mount(amount.second.uuid);
+                qDebug() << "Done ReMounting";
             }
         }
     });

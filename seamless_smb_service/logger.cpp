@@ -11,6 +11,7 @@
 
 Logger::Logger(QString logpath,bool debug):DbgPrint(debug,false), m_logpath(logpath)
 {
+    qDebug() << Q_FUNC_INFO;
 
 }
 
@@ -44,7 +45,7 @@ void Logger::print(LPCWSTR format,...)
         f = new QFile(m_logpath);
         if (!f->open(QIODevice::WriteOnly | QIODevice::Append)) {
             delete f;
-            f = 0;
+            f = nullptr;
             return;
         }
         QByteArray ps('\n' + s + "--- DEBUG LOG OPENED ---\n");

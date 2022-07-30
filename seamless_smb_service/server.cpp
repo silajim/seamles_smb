@@ -30,18 +30,22 @@ void Server::sendStatusSlot(QUuid id, bool running)
 {
     std::lock_guard<std::mutex> lg(mutex);
     if(!sockets){
-        qDebug() << "No socket";
+//        qDebug() << "No socket";
         return;
     }
 
     QString msg("STATUS %1 %2\n");
     msg = msg.arg(id.toString()).arg(running);
+    try{
     qint64 bytes = sockets->write(msg.toLatin1());
+    }catch(...){
+        qDebug() << "Socket exception";
+    }
 
 //    foreach(QLocalSocket* sock , sockets){
 //        sock->write(msg.toUtf8());
 //    }
-    qDebug() << "Status wrote" << msg << "bytes" << bytes;
+//    qDebug() << "Status wrote" << msg << "bytes" << bytes;
 }
 
 void Server::onnewConnection()

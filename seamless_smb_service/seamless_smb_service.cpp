@@ -2,28 +2,6 @@
 #include <QFile>
 #include <QTextStream>
 
-void myMessageHandler(QtMsgType type, const QMessageLogContext &, const QString & msg)
-{
-    QString txt;
-    switch (type) {
-    case QtDebugMsg:
-        txt = QString("Debug: %1").arg(msg);
-        break;
-    case QtWarningMsg:
-        txt = QString("Warning: %1").arg(msg);
-        break;
-    case QtCriticalMsg:
-        txt = QString("Critical: %1").arg(msg);
-        break;
-    case QtFatalMsg:
-        txt = QString("Fatal: %1").arg(msg);
-        abort();
-    }
-    QFile outFile("Servicelog.txt");
-    outFile.open(QIODevice::WriteOnly | QIODevice::Append);
-    QTextStream ts(&outFile);
-    ts << txt << Qt::endl;
-}
 
 seamless_smb_service::seamless_smb_service(int argc, char **argv): QtService<QCoreApplication>(argc,argv,"Seamless smb")
 {
@@ -35,8 +13,8 @@ seamless_smb_service::seamless_smb_service(int argc, char **argv): QtService<QCo
 
 void seamless_smb_service::start()
 {
+     qDebug() << "Start Service";
     if(!daemon && !dthread){
-//        qInstallMessageHandler(myMessageHandler);
         daemon = new Daemon();
         dthread = new QThread(this);
         connect(dthread,&QThread::finished,dthread,&QThread::deleteLater);
@@ -47,6 +25,7 @@ void seamless_smb_service::start()
 
 void seamless_smb_service::stop()
 {
+    qDebug() << "Stop Service";
     if(daemon && dthread){
         connect(daemon,&QObject::destroyed,dthread,&QThread::quit);
         daemon->deleteLater();
@@ -58,5 +37,5 @@ void seamless_smb_service::stop()
 
 void seamless_smb_service::processCommand(int code)
 {
-
+    qDebug() << "Command" << code;
 }
