@@ -9,7 +9,7 @@
 
 #include <comdef.h>
 
-Logger::Logger(QString logpath,bool debug):DbgPrint(debug,false), m_logpath(logpath)
+Logger::Logger(QString logpath,bool debug):DbgPrint(false,debug), m_logpath(logpath)
 {
     qDebug() << Q_FUNC_INFO;
 
@@ -29,6 +29,9 @@ Logger::~Logger()
 
 void Logger::print(LPCWSTR format,...)
 {
+
+    if(!m_DebugMode)
+        return;
     static QMutex mutex;
     QMutexLocker locker(&mutex);
 #if defined(Q_OS_WIN32)

@@ -40,7 +40,7 @@ ApplicationUI::ApplicationUI(QObject *parent) : QObject(parent)
 
     isRunningTimer = new QTimer(this);
     connect(isRunningTimer,&QTimer::timeout,this,&ApplicationUI::isRunningTimerTimeout);
-    isRunningTimer->start(1000);
+
 
     setIsInstalled(service->isInstalled());
     isRunningTimerTimeout();
@@ -52,6 +52,8 @@ ApplicationUI::ApplicationUI(QObject *parent) : QObject(parent)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
     engine->load(url);
+
+    isRunningTimer->start(1000);
 }
 
 ApplicationUI::~ApplicationUI()

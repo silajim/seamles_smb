@@ -1,0 +1,190 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E3FDF066-D101-3783-BC7C-9804E4B7DA19}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>x64</Platform>
+    <ProjectName>seamless_smb</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">G:\Dokan Library-1.5.0\sample\mirror\bin\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">seamless_smb.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">seamless_smb</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">G:\Dokan Library-1.5.0\sample\mirror\bin\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">seamless_smb.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">seamless_smb</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>G:\Dokan Library-1.5.0\sample\mirror\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\..\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;1:"_DEBUG"&gt;;0"NDEBUG"&gt;;_CONSOLE;UNICODE;_UNICODE;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;1:\"_DEBUG\"&gt;;0\"NDEBUG\"&gt;;_CONSOLE;UNICODE;_UNICODE;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>G:\Dokan Library-1.5.0\sample\mirror\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\..\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>G:\Dokan Library-1.5.0\sample\mirror\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\..\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>dokan2.lib;seamless_smb_lib\Debug\seamless_smb_lib.lib;ntdll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>G:/Dokan Library-1.5.0/sample/mirror/lib;G:/Dokan Library-1.5.0/sample/mirror/lib/$(Configuration);G:/Dokan Library-1.5.0/sample/mirror/../debug;G:/Dokan Library-1.5.0/sample/mirror/../debug/$(Configuration);G:/Dokan Library-1.5.0/sample/mirror;G:/Dokan Library-1.5.0/sample/mirror/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>G:/Dokan Library-1.5.0/sample/mirror/Debug/seamless_smb.lib</ImportLibrary>
+      <ProgramDataBaseFile>G:/Dokan Library-1.5.0/sample/mirror/bin/Debug/seamless_smb.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>G:\Dokan Library-1.5.0\sample\mirror\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\..\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;0:"_DEBUG"&gt;;1"NDEBUG"&gt;;_CONSOLE;UNICODE;_UNICODE;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;0:\"_DEBUG\"&gt;;1\"NDEBUG\"&gt;;_CONSOLE;UNICODE;_UNICODE;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>G:\Dokan Library-1.5.0\sample\mirror\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\..\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>G:\Dokan Library-1.5.0\sample\mirror\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\..\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\include;G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>dokan2.lib;seamless_smb_lib\Release\seamless_smb_lib.lib;ntdll.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>G:/Dokan Library-1.5.0/sample/mirror/lib;G:/Dokan Library-1.5.0/sample/mirror/lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>G:/Dokan Library-1.5.0/sample/mirror/Release/seamless_smb.lib</ImportLibrary>
+      <ProgramDataBaseFile>G:/Dokan Library-1.5.0/sample/mirror/bin/Release/seamless_smb.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="G:\Dokan Library-1.5.0\sample\mirror\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule G:/Dokan Library-1.5.0/sample/mirror/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SG:/Dokan Library-1.5.0/sample/mirror" "-BG:/Dokan Library-1.5.0/sample/mirror" --check-stamp-file "G:/Dokan Library-1.5.0/sample/mirror/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Internal\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeCCompiler.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeCXXCompiler.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeRCCompiler.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeSystem.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\FindWrapAtomic.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6Config.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6ConfigExtras.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6ConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6ConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6Dependencies.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6Targets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6VersionlessTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtFeature.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtFeatureCommon.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicCMakeHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicCMakeVersionHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicDependencyHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicFinalizerHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicFindPackageHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicPluginHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicTargetHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicWalkLibsHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreAdditionalTargetInfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfig.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfigExtras.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreDependencies.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreMacros.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreTargets-debug.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreTargets-relwithdebinfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreVersionlessTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsAdditionalTargetInfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsConfig.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsDependencies.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsTargets-debug.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsTargets-relwithdebinfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsVersionlessTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateAdditionalTargetInfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateConfig.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateTargets-debug.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateTargets-relwithdebinfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateVersionlessTargets.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule G:/Dokan Library-1.5.0/sample/mirror/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SG:/Dokan Library-1.5.0/sample/mirror" "-BG:/Dokan Library-1.5.0/sample/mirror" --check-stamp-file "G:/Dokan Library-1.5.0/sample/mirror/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCheckCompilerFlagCommonPatterns.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeParseArguments.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckCXXCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckCXXSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Internal\CheckCompilerFlag.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.21\Modules\Platform\WindowsPaths.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeCCompiler.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeCXXCompiler.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeRCCompiler.cmake;G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\3.21.2\CMakeSystem.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\FindWrapAtomic.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6Config.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6ConfigExtras.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6ConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6ConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6Dependencies.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6Targets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\Qt6VersionlessTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtFeature.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtFeatureCommon.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicCMakeHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicCMakeVersionHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicDependencyHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicFinalizerHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicFindPackageHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicPluginHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicTargetHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6\QtPublicWalkLibsHelpers.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreAdditionalTargetInfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfig.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfigExtras.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreDependencies.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreMacros.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreTargets-debug.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreTargets-relwithdebinfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6Core\Qt6CoreVersionlessTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsAdditionalTargetInfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsConfig.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsDependencies.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsTargets-debug.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsTargets-relwithdebinfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6CoreTools\Qt6CoreToolsVersionlessTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateAdditionalTargetInfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateConfig.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateConfigVersion.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateConfigVersionImpl.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateTargets-debug.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateTargets-relwithdebinfo.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateTargets.cmake;G:\Qt\6.2.4\msvc2019_64\lib\cmake\Qt6EntryPointPrivate\Qt6EntryPointPrivateVersionlessTargets.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">G:\Dokan Library-1.5.0\sample\mirror\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="G:\Dokan Library-1.5.0\sample\mirror\mirror.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="G:\Dokan Library-1.5.0\sample\mirror\ZERO_CHECK.vcxproj">
+      <Project>{F46E8E08-D16B-353F-A91A-65A75F85C1BA}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="G:\Dokan Library-1.5.0\sample\mirror\seamless_smb_lib\seamless_smb_lib.vcxproj">
+      <Project>{172CF9DE-1B5B-36A4-B4BB-A85F96A68181}</Project>
+      <Name>seamless_smb_lib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

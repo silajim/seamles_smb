@@ -63,8 +63,12 @@ private:
 
     QThread *sockThread=nullptr;
 
+    QTimer saveSecurityTimer;
+
+
 private slots:
     void checkStatus();
+    void onSaveSecurity();
 
 };
 

@@ -6,6 +6,7 @@
 #include <QUuid>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QTimer>
 
 class Client : public QObject
 {
@@ -21,12 +22,14 @@ signals:
     void status(QUuid id,bool running);
 
 private slots:
+    void onConnectTimer();
     void onSocketError(QLocalSocket::LocalSocketError error);
     void onReadyRead();
 
 private:
     QLocalSocket *localsocket=nullptr;
     QMutex mutex;
+    QTimer connectTimer;
 
 };
 

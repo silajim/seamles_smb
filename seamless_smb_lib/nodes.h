@@ -33,7 +33,7 @@
 #include <algorithm>
 
 struct Nodes{
-    Nodes(): _filenodes(std::make_shared<std::list<std::shared_ptr<filenode>>>()) {
+    Nodes() {
         //       _filenodes = std::shared_ptr<std::unordered_map<std::wstring, std::shared_ptr<filenode>>>();
     }
     std::mutex m_mutex;
@@ -44,6 +44,7 @@ struct Nodes{
     bool rename(std::wstring fname , std::wstring newfname);
     bool move(std::wstring fname , std::wstring newfname);
     bool deleteFileNode(std::wstring fname);
+    bool deleteFileNode( std::shared_ptr<filenode> node);
 
 private:
      std::shared_ptr<filenode> findFileNodeP(std::wstring fname);
@@ -55,12 +56,12 @@ private:
         ar &_filenodes;
     }
 
-    std::shared_ptr<std::list<std::shared_ptr<filenode>>> _filenodes;
+    std::list<std::shared_ptr<filenode>> _filenodes;
 };
 
 inline void Nodes::printAll()
 {
-    for(auto it  = _filenodes->begin();it!=_filenodes->end();++it){
+    for(auto it  = _filenodes.begin();it!=_filenodes.end();++it){
         std::wcout  << it->get()->_fileName << std::endl;
         std::wcout.flush();
     }
@@ -81,7 +82,7 @@ inline bool Nodes::addFileNode(std::shared_ptr<filenode> node)
         return false;
     auto f = findFileNodeP(node->_fileName);
     if(!f){
-        _filenodes->push_back(node);
+        _filenodes.push_back(node);
         return true;
     }
     return false;
@@ -90,7 +91,7 @@ inline bool Nodes::addFileNode(std::shared_ptr<filenode> node)
 inline bool Nodes::rename(std::wstring fname, std::wstring newfname)
 {
      std::lock_guard<std::mutex> lg(m_mutex);
-    if(_filenodes->empty())
+    if(_filenodes.empty())
         return false;
     auto f = findFileNodeP(fname);
     if(f){
@@ -98,34 +99,41 @@ inline bool Nodes::rename(std::wstring fname, std::wstring newfname)
         return true;
     }
     return false;
-
 }
 
 inline bool Nodes::move(std::wstring fname, std::wstring newfname)
 {
     return rename(fname,newfname);
-
 }
 
 inline bool Nodes::deleteFileNode(std::wstring fname)
 {
     std::lock_guard<std::mutex> lg(m_mutex);
-    if(_filenodes->empty())
+    if(_filenodes.empty())
         return false;
     auto f = findFileNodeP(fname);
     if(f){
-        _filenodes->remove(f);
+        _filenodes.remove(f);
         return true;
     }
     return false;
 }
 
+inline bool Nodes::deleteFileNode(std::shared_ptr<filenode> node)
+{
+    std::lock_guard<std::mutex> lg(m_mutex);
+    if(_filenodes.empty())
+        return false;
+     _filenodes.remove(node);
+     return true;
+}
+
 inline std::shared_ptr<filenode> Nodes::findFileNodeP(std::wstring fname)
 {
-    if(_filenodes->empty())
+    if(_filenodes.empty())
         return nullptr;
 
-    for(auto it  = _filenodes->begin();it!=_filenodes->end();++it){
+    for(auto it  = _filenodes.begin();it!=_filenodes.end();++it){
         if(it->get()->_fileName == fname)
             return *it;
     }

@@ -401,6 +401,12 @@ BOOL WinSec::get_sid(const wchar_t *name, PSID *ppsid)
 
 NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescriptor)
 {
+    if(SDCached){
+        *SecurityDescriptor = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR,SDCachedSize);
+        memcpy(*SecurityDescriptor,SDCached,SDCachedSize);
+        return ERROR_SUCCESS;
+    }
+
     PSID owner=NULL, group=NULL;
 
     PACL dacl;
@@ -446,30 +452,14 @@ NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescr
     SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
      AllocateAndInitializeSid(&SIDAuth, 1,SECURITY_WORLD_RID , 0, 0, 0, 0, 0, 0, 0, &everyone);
 
-//    if(!owner || !IsValidSid(owner)){
-//        owner = everyone;
-//    }
-
-    //    if(!IsValidSid(owner)){
-    //        SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
-    //        AllocateAndInitializeSid(&SIDAuth, 1,SECURITY_WORLD_RID , 0, 0, 0, 0, 0, 0, 0, &owner);
-    //    }
 
     printSid(ntauth);
     printSid(admins);
     printSid(owner);
-    PSID psid2;
-    DWORD cbSid;
-    SID_NAME_USE nameuse;
-    //    get_sid(L"NT AUTHORITY/SYSTEM",&psid2);
-    //     printSid(psid2);
-    //    LookupAccountNameW(NULL,L"NT AUTHORITY/SYSTEM",NULL,&cbSid,NULL,NULL,&nameuse);
+//    PSID psid2;
+//    DWORD cbSid;
+//    SID_NAME_USE nameuse;
 
-
-    //    for (int i = 0; i < NUM_OF_ACES; i++)
-    //        {
-    //            cbAcl += GetLengthSid(psids[i]) - sizeof(DWORD);
-    //        }
     cbAcl += GetLengthSid(ntauth) - sizeof(DWORD);
     cbAcl += GetLengthSid(ntauth) - sizeof(DWORD);
     cbAcl += GetLengthSid(admins) - sizeof(DWORD);
@@ -539,7 +529,17 @@ NTSTATUS WinSec::CreateDefaultSelfRelativeSD(PSECURITY_DESCRIPTOR *SecurityDescr
     valid = IsValidSecurityDescriptor(lcsd);
     m_print->print(L"VAlid lcsd, %d \n", valid);
 
+    SDCachedSize = sdsize;
+    SDCached = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR,sdsize);
+    memcpy(SDCached,lcsd,sdsize);
+
     *SecurityDescriptor = lcsd;
+
+    FreeSid(ntauth);
+    FreeSid(admins);
+    FreeSid(everyone);
+    LocalFree(dacl);
+
 
     printSD(lcsd,-1);
 

@@ -257,7 +257,6 @@ FileOps::MirrorCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityC
                 f->security.SetDescriptor(GET_WINSEC_INSTANCE,GET_PRINT_INSTANCE,SecurityContext->AccessState.SecurityDescriptor);
                 SecurityContext->AccessState.SecurityDescriptor = NULL;
                 securityAttrib.lpSecurityDescriptor = NULL;
-
             }
 
 

@@ -59,6 +59,8 @@ filenode::filenode(const std::wstring& filename, bool is_directory, DWORD file_a
 void security_informations::SetDescriptor(std::shared_ptr<WinSec> winsec , std::shared_ptr<DbgPrint> print ,PSECURITY_DESCRIPTOR securitydescriptor) {    
     if (!securitydescriptor) return;
 
+    std::lock_guard<std::mutex> lg(m_mutex);
+
     PSECURITY_DESCRIPTOR internalsd = securitydescriptor;
     DWORD internalsize =  GetSecurityDescriptorLength(securitydescriptor);
 
@@ -88,6 +90,8 @@ void security_informations::SetDescriptor(std::shared_ptr<WinSec> winsec , std::
 
 void security_informations::GetDescriptor(std::shared_ptr<WinSec> winsec, std::shared_ptr<DbgPrint> print,PSECURITY_DESCRIPTOR *securitydescriptor)
 {
+     std::lock_guard<std::mutex> lg(m_mutex);
+
     if(descriptor_size!=0){
         *securitydescriptor = LocalAlloc(LPTR, static_cast<size_t>(descriptor_size));
         memcpy(*securitydescriptor,descriptor.get(),static_cast<size_t>(descriptor_size));

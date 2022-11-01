@@ -1,0 +1,88 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CMakePredefinedTargets", "CMakePredefinedTargets", "{C7F9D5A0-CA88-3B88-8C60-6183F8CEA244}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ALL_BUILD", "ALL_BUILD.vcxproj", "{911993FE-AC25-31A8-93BE-6F3050F036CD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {F46E8E08-D16B-353F-A91A-65A75F85C1BA}
+		{A9B081A9-5059-38CB-BCA1-0ED8F08D2841} = {A9B081A9-5059-38CB-BCA1-0ED8F08D2841}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtService", "..\qt-solutions\qtservice\src\QtService.vcxproj", "{F0C25B33-99EB-3471-84E8-5FC808578574}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {F46E8E08-D16B-353F-A91A-65A75F85C1BA}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZERO_CHECK", "..\\ZERO_CHECK.vcxproj", "{F46E8E08-D16B-353F-A91A-65A75F85C1BA}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "seamless_smb_common", "..\seamless_smb_common\seamless_smb_common.vcxproj", "{D07050F3-636C-370B-8F15-68631DF4DEE7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DEAAC4A9-F3E6-3C04-B103-528B354B6376} = {DEAAC4A9-F3E6-3C04-B103-528B354B6376}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "seamless_smb_lib", "..\seamless_smb_lib\seamless_smb_lib.vcxproj", "{172CF9DE-1B5B-36A4-B4BB-A85F96A68181}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {F46E8E08-D16B-353F-A91A-65A75F85C1BA}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "seamless_smb_service_lib", "..\seamless_smb_service\seamless_smb_service_lib.vcxproj", "{DEAAC4A9-F3E6-3C04-B103-528B354B6376}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F0C25B33-99EB-3471-84E8-5FC808578574} = {F0C25B33-99EB-3471-84E8-5FC808578574}
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {F46E8E08-D16B-353F-A91A-65A75F85C1BA}
+		{172CF9DE-1B5B-36A4-B4BB-A85F96A68181} = {172CF9DE-1B5B-36A4-B4BB-A85F96A68181}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "seamless_smb_service_tester", "seamless_smb_service_tester.vcxproj", "{A9B081A9-5059-38CB-BCA1-0ED8F08D2841}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F0C25B33-99EB-3471-84E8-5FC808578574} = {F0C25B33-99EB-3471-84E8-5FC808578574}
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {F46E8E08-D16B-353F-A91A-65A75F85C1BA}
+		{D07050F3-636C-370B-8F15-68631DF4DEE7} = {D07050F3-636C-370B-8F15-68631DF4DEE7}
+		{172CF9DE-1B5B-36A4-B4BB-A85F96A68181} = {172CF9DE-1B5B-36A4-B4BB-A85F96A68181}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{911993FE-AC25-31A8-93BE-6F3050F036CD}.Debug|x64.ActiveCfg = Debug|x64
+		{911993FE-AC25-31A8-93BE-6F3050F036CD}.Release|x64.ActiveCfg = Release|x64
+		{F0C25B33-99EB-3471-84E8-5FC808578574}.Debug|x64.ActiveCfg = Debug|x64
+		{F0C25B33-99EB-3471-84E8-5FC808578574}.Debug|x64.Build.0 = Debug|x64
+		{F0C25B33-99EB-3471-84E8-5FC808578574}.Release|x64.ActiveCfg = Release|x64
+		{F0C25B33-99EB-3471-84E8-5FC808578574}.Release|x64.Build.0 = Release|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Debug|x64.ActiveCfg = Debug|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Debug|x64.Build.0 = Debug|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Release|x64.ActiveCfg = Release|x64
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA}.Release|x64.Build.0 = Release|x64
+		{D07050F3-636C-370B-8F15-68631DF4DEE7}.Debug|x64.ActiveCfg = Debug|x64
+		{D07050F3-636C-370B-8F15-68631DF4DEE7}.Debug|x64.Build.0 = Debug|x64
+		{D07050F3-636C-370B-8F15-68631DF4DEE7}.Release|x64.ActiveCfg = Release|x64
+		{D07050F3-636C-370B-8F15-68631DF4DEE7}.Release|x64.Build.0 = Release|x64
+		{172CF9DE-1B5B-36A4-B4BB-A85F96A68181}.Debug|x64.ActiveCfg = Debug|x64
+		{172CF9DE-1B5B-36A4-B4BB-A85F96A68181}.Debug|x64.Build.0 = Debug|x64
+		{172CF9DE-1B5B-36A4-B4BB-A85F96A68181}.Release|x64.ActiveCfg = Release|x64
+		{172CF9DE-1B5B-36A4-B4BB-A85F96A68181}.Release|x64.Build.0 = Release|x64
+		{DEAAC4A9-F3E6-3C04-B103-528B354B6376}.Debug|x64.ActiveCfg = Debug|x64
+		{DEAAC4A9-F3E6-3C04-B103-528B354B6376}.Debug|x64.Build.0 = Debug|x64
+		{DEAAC4A9-F3E6-3C04-B103-528B354B6376}.Release|x64.ActiveCfg = Release|x64
+		{DEAAC4A9-F3E6-3C04-B103-528B354B6376}.Release|x64.Build.0 = Release|x64
+		{A9B081A9-5059-38CB-BCA1-0ED8F08D2841}.Debug|x64.ActiveCfg = Debug|x64
+		{A9B081A9-5059-38CB-BCA1-0ED8F08D2841}.Debug|x64.Build.0 = Debug|x64
+		{A9B081A9-5059-38CB-BCA1-0ED8F08D2841}.Release|x64.ActiveCfg = Release|x64
+		{A9B081A9-5059-38CB-BCA1-0ED8F08D2841}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{911993FE-AC25-31A8-93BE-6F3050F036CD} = {C7F9D5A0-CA88-3B88-8C60-6183F8CEA244}
+		{F46E8E08-D16B-353F-A91A-65A75F85C1BA} = {C7F9D5A0-CA88-3B88-8C60-6183F8CEA244}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9ED1985E-B451-38AA-9F79-79004ED3BAA7}
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

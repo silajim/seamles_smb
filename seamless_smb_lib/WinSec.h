@@ -38,6 +38,9 @@ private:
     void printACL(PACL pdacl);
     void printSid(PSID sid);
     BOOL get_sid(const wchar_t *name, PSID *ppsid);
+
+    PSECURITY_DESCRIPTOR SDCached=nullptr;
+    ULONG SDCachedSize=0;
 };
 
 #endif // WINSEC_H

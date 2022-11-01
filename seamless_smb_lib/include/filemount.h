@@ -22,6 +22,7 @@ public:
     void unmount();
     bool isRunning();
     void join();
+    void saveSecurity();
 
     std::wstring getRootDir();
     std::wstring getMountPoint();

@@ -1,0 +1,30 @@
+{
+	"BUILD_DIR" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/seamless_smb_service_controller_autogen",
+	"CMAKE_BINARY_DIR" : "G:/Dokan Library-1.5.0/sample/mirror",
+	"CMAKE_CURRENT_BINARY_DIR" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller",
+	"CMAKE_CURRENT_SOURCE_DIR" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller",
+	"CMAKE_SOURCE_DIR" : "G:/Dokan Library-1.5.0/sample/mirror",
+	"INCLUDE_DIR" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/seamless_smb_service_controller_autogen/include",
+	"INCLUDE_DIR_Debug" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/seamless_smb_service_controller_autogen/include_Debug",
+	"INCLUDE_DIR_Release" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/seamless_smb_service_controller_autogen/include_Release",
+	"INPUTS" : 
+	[
+		"G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/qtquickcontrols2.conf",
+		"G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/main.qml",
+		"G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/EditDialog.qml",
+		"G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/StackedTextEditor.qml",
+		"G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/StackedTextField.qml"
+	],
+	"LOCK_FILE" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/CMakeFiles/seamless_smb_service_controller_autogen.dir/AutoRcc_qml_EWIEGA46WW_Lock.lock",
+	"MULTI_CONFIG" : true,
+	"OPTIONS" : [ "-name", "qml" ],
+	"OUTPUT_CHECKSUM" : "EWIEGA46WW",
+	"OUTPUT_NAME" : "qrc_qml.cpp",
+	"RCC_EXECUTABLE" : "G:/Qt/6.2.4/msvc2019_64/./bin/rcc.exe",
+	"RCC_LIST_OPTIONS" : [ "--list" ],
+	"SETTINGS_FILE" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/CMakeFiles/seamless_smb_service_controller_autogen.dir/AutoRcc_qml_EWIEGA46WW_Used.txt",
+	"SETTINGS_FILE_Debug" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/CMakeFiles/seamless_smb_service_controller_autogen.dir/AutoRcc_qml_EWIEGA46WW_Used_Debug.txt",
+	"SETTINGS_FILE_Release" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/CMakeFiles/seamless_smb_service_controller_autogen.dir/AutoRcc_qml_EWIEGA46WW_Used_Release.txt",
+	"SOURCE" : "G:/Dokan Library-1.5.0/sample/mirror/seamless_smb_service_controller/qml.qrc",
+	"VERBOSITY" : 0
+}

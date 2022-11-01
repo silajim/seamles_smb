@@ -10,7 +10,12 @@ Client::Client(QObject *parent) : QObject(parent)
     connect(localsocket,&QLocalSocket::stateChanged,[](QLocalSocket::LocalSocketState state){
         qDebug() << "SOCKET STATE" << state;
     });
+    connect(&connectTimer,&QTimer::timeout,this,&Client::onConnectTimer);
+    connectTimer.setSingleShot(true);
     localsocket->connectToServer("seamless_smb_service");
+    if(!localsocket->waitForConnected()){
+        connectTimer.start(30*1000);
+    }
 
     connect(localsocket,&QLocalSocket::readyRead,this,&Client::onReadyRead);
 }
@@ -29,6 +34,14 @@ void Client::sendReload()
         qDebug() << "Sending Reload";
         localsocket->write("reload\n");
         localsocket->flush();
+    }
+}
+
+void Client::onConnectTimer()
+{
+    localsocket->connectToServer("seamless_smb_service");
+    if(!localsocket->waitForConnected()){
+        connectTimer.start(30*1000);
     }
 }
 

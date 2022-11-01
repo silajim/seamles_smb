@@ -39,6 +39,8 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     connect(sock,&Server::mount,this,&Daemon::mount);
     connect(sock,&Server::mountAll,this,&Daemon::mountAll);
 
+    connect(&saveSecurityTimer,&QTimer::timeout,this,&Daemon::onSaveSecurity);
+
 
     statTimer = settings->value("statTimer",5000).toUInt();
     connect(&stats,&QTimer::timeout,this,&Daemon::checkStatus);
@@ -47,7 +49,8 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     DokanInit();
     reloadMounts();
 
-    stats.start(statTimer);
+    stats.start(statTimer);    
+    saveSecurityTimer.start(60*1000); //1 Minute
 
 }
 
@@ -163,7 +166,11 @@ void Daemon::add(MountInfo info)
 
     std::shared_ptr<Logger> log = std::make_shared<Logger>(savePath,info.debug);
 
+    qDebug() << "Log Created";
+
     std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions,log);
+
+    qDebug() << "Mount Created";
 
     auto pair = qMakePair(filemount,info);
     mounts << pair;
@@ -266,6 +273,16 @@ void Daemon::checkStatus()
                 mount(amount.second.uuid);
                 qDebug() << "Done ReMounting";
             }
+        }
+    });
+}
+
+void Daemon::onSaveSecurity()
+{
+qDebug() << Q_FUNC_INFO;
+    QtConcurrent::run([this](){
+        for(auto &mount : mounts){
+            mount.first->saveSecurity();
         }
     });
 }
