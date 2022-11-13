@@ -46,7 +46,7 @@ FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestder
     std::wstring datfile = exec_location+L"\\"+rootdir+L".dat";
 
     if(boost::filesystem::exists(datfile)){
-        print->print(L"FILEMOUNT Dat Location -- %s",datfile.c_str());
+         m_context->print->print(L"FILEMOUNT Dat Location -- %s",datfile.c_str());
 
         std::filebuf filer;
         filer.open(datfile,std::ios_base::in|std::ios_base::binary);

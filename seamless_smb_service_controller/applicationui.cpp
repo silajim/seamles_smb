@@ -79,6 +79,7 @@ void ApplicationUI::isRunningTimerTimeout()
     if(!isInstalled)
         return;
     bool run = service->isRunning();
+//    bool run = true; //For debug using seamless_smb_service_test since the "service" itself is not technically running
     if(run && !sock){
         qDebug() << "Create socket";
         sockThread = new QThread(this);
