@@ -39,7 +39,7 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     connect(sock,&Server::mount,this,&Daemon::mount);
     connect(sock,&Server::mountAll,this,&Daemon::mountAll);
 
-    connect(&saveSecurityTimer,&QTimer::timeout,this,&Daemon::onSaveSecurity);
+//    connect(&saveSecurityTimer,&QTimer::timeout,this,&Daemon::onSaveSecurity);
 
 
     statTimer = settings->value("statTimer",5000).toUInt();
@@ -50,7 +50,7 @@ Daemon::Daemon(QObject *parent):QObject(parent)
     reloadMounts();
 
     stats.start(statTimer);    
-    saveSecurityTimer.start(60*1000); //1 Minute
+//    saveSecurityTimer.start(60*1000); //1 Minute
 
 }
 
@@ -139,7 +139,7 @@ void Daemon::remove(const MountInfo &info)
     for(int i=0;i<mounts.size();i++){
         auto mount = mounts[i];
         if(info.uuid == mount.second.uuid){
-            mount.first->unmount();
+            mount.first->terminate();
             mounts.removeAt(i);
             break;
         }
@@ -156,23 +156,29 @@ void Daemon::add(mlist _add)
 void Daemon::add(MountInfo info)
 {
     qDebug() << Q_FUNC_INFO;
-    DOKAN_OPTIONS dokanOptions;
-    std::shared_ptr<Globals> globals;
+//    DOKAN_OPTIONS dokanOptions;
+//    std::shared_ptr<Globals> globals;
 
-    MountInfoToGlobal(info,globals,dokanOptions);
+//    MountInfoToGlobal(info,globals,dokanOptions);
 
-    QString savePath  = QCoreApplication::applicationDirPath()+"/"+info.RootDirectory.replace("\\","_")+".log";
-    qDebug() << "SAVE LOGGER" << savePath;
+//    QString savePath  = QCoreApplication::applicationDirPath()+"/"+info.RootDirectory.replace("\\","_")+".log";
+//    qDebug() << "SAVE LOGGER" << savePath;
 
-    std::shared_ptr<Logger> log = std::make_shared<Logger>(savePath,info.debug);
+//    std::shared_ptr<Logger> log = std::make_shared<Logger>(savePath,info.debug);
 
-    qDebug() << "Log Created";
+//    qDebug() << "Log Created";
 
-    std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions,log);
+//    std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions,log);
 
-    qDebug() << "Mount Created";
+//    qDebug() << "Mount Created";
 
-    auto pair = qMakePair(filemount,info);
+    auto p = std::make_shared<QProcess>();
+    p->setProgram(QCoreApplication::applicationDirPath()+"/"+"seamless_smb_service_process.exe");
+    p->setArguments({settings->fileName(),info.uuid.toString()});
+    qDebug() << "ARGS" << Qt::endl << p->arguments();
+//    p->start(QCoreApplication::applicationDirPath()+"/"+"seamless_smb_service_process.exe",{settings->fileName(),info.uuid.toString()});
+
+    auto pair = qMakePair(p,info);
     mounts << pair;
 }
 
@@ -188,16 +194,22 @@ void Daemon::modify(const MountInfo &info)
     for(int i=0;i<mounts.size();i++){
         auto mount = mounts[i];
         if(info.uuid == mount.second.uuid){
-            mount.first->unmount();
+            mount.first->terminate();
 
-            DOKAN_OPTIONS dokanOptions;
-            std::shared_ptr<Globals> globals;
+//            DOKAN_OPTIONS dokanOptions;
+//            std::shared_ptr<Globals> globals;
 
-            MountInfoToGlobal(info,globals,dokanOptions);
+//            MountInfoToGlobal(info,globals,dokanOptions);
 
-            std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions);
+//            std::shared_ptr<FileMount> filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions);
 
-            auto pair = qMakePair(filemount,info);
+            auto p = std::make_shared<QProcess>();
+            p->setProgram(QCoreApplication::applicationDirPath()+"/"+"seamless_smb_service_process.exe");
+            p->setArguments({settings->fileName(),info.uuid.toString()});
+//            p->start(QCoreApplication::applicationDirPath()+"/"+"seamless_smb_service_process.exe",{settings->fileName(),info.uuid.toString()});
+//            p->start();
+
+            auto pair = qMakePair(p,info);
 
             mounts.replace(i,pair);
             break;
@@ -210,14 +222,14 @@ void Daemon::mountAll()
     foreach(auto mount, mounts){
         QDir dir(mount.second.RootDirectory);
         if(dir.exists() && mount.second.enabled)
-            mount.first->mount();
+            mount.first->start();
     }
 }
 
 void Daemon::unmountAll()
 {
     foreach(auto mount, mounts){
-        mount.first->unmount();
+        mount.first->terminate();
     }
 }
 
@@ -225,7 +237,7 @@ void Daemon::mount(QUuid uuid)
 {
     foreach(auto mount, mounts){
         if(mount.second.uuid == uuid){
-            mount.first->mount();
+            mount.first->start();
             break;
         }
     }
@@ -235,7 +247,7 @@ void Daemon::unmount(QUuid uuid)
 {
     foreach(auto mount, mounts){
         if(mount.second.uuid == uuid){
-            mount.first->unmount();
+            mount.first->terminate();
             break;
         }
     }
@@ -265,7 +277,7 @@ void Daemon::checkStatus()
         foreach(auto amount, mounts){
 //            qDebug() << amount.second.RootDirectory << " " << amount.second.enabled;
 
-            bool running = amount.first->isRunning();
+            bool running = amount.first->state() == QProcess::Running;
             sock->sendStatus(amount.second.uuid,running);
 
             if(amount.second.enabled && amount.second.keepAlive && !running){
@@ -277,12 +289,12 @@ void Daemon::checkStatus()
     });
 }
 
-void Daemon::onSaveSecurity()
-{
-qDebug() << Q_FUNC_INFO;
-    QtConcurrent::run([this](){
-        for(auto &mount : mounts){
-            mount.first->saveSecurity();
-        }
-    });
-}
+//void Daemon::onSaveSecurity()
+//{
+//qDebug() << Q_FUNC_INFO;
+//    QtConcurrent::run([this](){
+//        for(auto &mount : mounts){
+//            mount.first->saveSecurity();
+//        }
+//    });
+//}
