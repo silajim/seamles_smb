@@ -175,7 +175,7 @@ void Daemon::add(MountInfo info)
     auto p = std::make_shared<QProcess>();
     p->setProgram(QCoreApplication::applicationDirPath()+"/"+"seamless_smb_service_process.exe");
     p->setArguments({settings->fileName(),info.uuid.toString()});
-    qDebug() << "ARGS" << Qt::endl << p->arguments();
+    qDebug()<< info.RootDirectory << "ARGS" << p->arguments();
 //    p->start(QCoreApplication::applicationDirPath()+"/"+"seamless_smb_service_process.exe",{settings->fileName(),info.uuid.toString()});
 
     auto pair = qMakePair(p,info);
