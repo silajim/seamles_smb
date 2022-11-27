@@ -17,6 +17,7 @@ public:
 private:
     QFile* f = nullptr;
     QString m_logpath = "C:/debuglog.txt";
+    unsigned int lines=0;
 };
 
 #endif // LOGGER_H

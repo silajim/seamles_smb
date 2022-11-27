@@ -1,4 +1,5 @@
 #include "logger.h"
+#include "qfileinfo.h"
 #include <QMutex>
 #include <QMutexLocker>
 #include <QtGlobal>
@@ -7,6 +8,7 @@
 #include <QIODevice>
 #include <QFile>
 
+#include <QDir>
 #include <comdef.h>
 
 Logger::Logger(QString logpath,bool debug):DbgPrint(false,debug), m_logpath(logpath)
@@ -45,7 +47,8 @@ void Logger::print(LPCWSTR format,...)
     s += "] ";
 
     if (!f) {
-        f = new QFile(m_logpath);
+        QString name = m_logpath+"_"+QDateTime::currentDateTime().toString("dd.MM-hh.mm.ss")+"_Start.log";
+        f = new QFile(name);
         if (!f->open(QIODevice::WriteOnly | QIODevice::Append)) {
             delete f;
             f = nullptr;
@@ -84,4 +87,28 @@ void Logger::print(LPCWSTR format,...)
 
     f->write(s);
     f->flush();
+
+    ++lines;
+
+    if(lines>=10000){
+        QFileInfo inf(m_logpath);
+        QDir dir = inf.absoluteDir();
+        dir.setNameFilters({inf.fileName()+"*.log"});
+        dir.setSorting(QDir::SortFlag::Time);
+        auto fileList = dir.entryInfoList();
+        f->close();
+        delete f;
+        if(fileList.size()>3){
+//            QString toRemove =
+            QFile::remove(fileList.last().absoluteFilePath());
+        }
+
+        f = new QFile(m_logpath+"_"+QDateTime::currentDateTime().toString("dd.MM-hh.mm.ss")+".log");
+        if (!f->open(QIODevice::WriteOnly | QIODevice::Append)) {
+            delete f;
+            f = nullptr;
+            return;
+        }
+        lines=0;
+    }
 }

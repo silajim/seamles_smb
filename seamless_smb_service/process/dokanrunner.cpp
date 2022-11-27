@@ -29,7 +29,7 @@ DokanRunner::DokanRunner(int argc, char *argv[])
 
             MountInfoToGlobal(info,globals,dokanOptions);
 
-            QString savePath  = QCoreApplication::applicationDirPath()+"/"+info.RootDirectory.replace("\\","_")+".log";
+            QString savePath  = QCoreApplication::applicationDirPath()+"/"+info.RootDirectory.replace("\\","_");
             qDebug() << "SAVE LOGGER" << savePath;
 
             std::shared_ptr<Logger> log = std::make_shared<Logger>(savePath,info.debug);
