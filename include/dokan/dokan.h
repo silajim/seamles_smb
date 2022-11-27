@@ -2,7 +2,7 @@
   Dokan : user-mode file system library for Windows
 
   Copyright (C) 2015 - 2019 Adrien J. <liryna.stark@gmail.com> and Maxime C. <maxime@islog.com>
-  Copyright (C) 2020 Google, Inc.
+  Copyright (C) 2020 - 2022 Google, Inc.
   Copyright (C) 2007 - 2011 Hiroki Asakawa <info@dokan-dev.net>
 
   http://dokan-dev.github.io
@@ -56,7 +56,7 @@ extern "C" {
 /** @{ */
 
 /** The current Dokan version (200 means ver 2.0.0). \ref DOKAN_OPTIONS.Version */
-#define DOKAN_VERSION 201
+#define DOKAN_VERSION 206
 /** Minimum Dokan version (ver 2.0.0) accepted. */
 #define DOKAN_MINIMUM_COMPATIBLE_VERSION 200
 /** Driver file name including the DOKAN_MAJOR_API_VERSION */
@@ -120,6 +120,12 @@ extern "C" {
  * Can be very slow if single thread is enabled.
  */
 #define DOKAN_OPTION_DISPATCH_DRIVER_LOGS (1 << 11)
+/**
+ * Pull batches of events from the driver instead of a single one and execute them parallelly.
+ * This option should only be used on computers with low cpu count
+ * and userland filesystem taking time to process requests (like remote storage).
+ */
+#define DOKAN_OPTION_ALLOW_IPC_BATCHING (1 << 12)
 
 /** @} */
 
@@ -342,9 +348,11 @@ typedef struct _DOKAN_OPERATIONS {
   * WriteFile callback on the file previously opened in DOKAN_OPERATIONS.ZwCreateFile
   * It can be called by different threads at the same time, sp the write/context has to be thread safe.
   *
-  * When apps make use of memory mapped files, DOKAN_OPERATIONS.WriteFile or DOKAN_OPERATIONS.ReadFile
+  * When apps make use of memory mapped files ( DOKAN_FILE_INFO.PagingIo ),
+  * DOKAN_OPERATIONS.WriteFile or DOKAN_OPERATIONS.ReadFile
   * functions may be invoked after DOKAN_OPERATIONS.Cleanup in order to complete the I/O operations.
   * The file system application should also properly work in this case.
+  * This type of request should follow Windows rules like not extending the current file size.
   * 
   * \param FileName File path requested by the Kernel on the FileSystem.
   * \param Buffer Data that has to be written.
@@ -391,9 +399,10 @@ typedef struct _DOKAN_OPERATIONS {
   /**
   * \brief FindFiles Dokan API callback
   *
-  * List all files in the requested path
+  * List all files in the requested path.
   * \ref DOKAN_OPERATIONS.FindFilesWithPattern is checked first. If it is not implemented or
-  * returns \c STATUS_NOT_IMPLEMENTED, then FindFiles is called, if implemented.
+  * returns \c STATUS_NOT_IMPLEMENTED, then FindFiles is called, if assigned.
+  * It is recommended to have this implemented for performance reason.
   *
   * \param FileName File path requested by the Kernel on the FileSystem.
   * \param FillFindData Callback that has to be called with PWIN32_FIND_DATAW that contain file information.
@@ -414,6 +423,7 @@ typedef struct _DOKAN_OPERATIONS {
   *
   * If the function is not implemented, \ref DOKAN_OPERATIONS.FindFiles
   * will be called instead and the result will be filtered internally by the library.
+  * It is recommended to have this implemented for performance reason.
   *
   * \param PathName Path requested by the Kernel on the FileSystem.
   * \param SearchPattern Search pattern.
@@ -922,7 +932,7 @@ ULONG DOKANAPI DokanVersion();
 /**
  * \brief Get the version of the Dokan driver.
  * The returned ULONG is the version number without the dots.
- * \return The version of Dokan driver.
+ * \return The version of Dokan driver or 0 on failure.
  */
 ULONG DOKANAPI DokanDriverVersion();
 
