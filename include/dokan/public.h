@@ -1,7 +1,7 @@
 /*
   Dokan : user-mode file system library for Windows
 
-  Copyright (C) 2017 - 2021 Google, Inc.
+  Copyright (C) 2017 - 2022 Google, Inc.
   Copyright (C) 2015 - 2019 Adrien J. <liryna.stark@gmail.com> and Maxime C. <maxime@islog.com>
   Copyright (C) 2007 - 2011 Hiroki Asakawa <info@dokan-dev.net>
 
@@ -492,12 +492,6 @@ typedef struct _DOKAN_RENAME_INFORMATION {
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
-typedef struct _DOKAN_LINK_INFORMATION {
-  BOOLEAN ReplaceIfExists;
-  ULONG FileNameLength;
-  WCHAR FileName[1];
-} DOKAN_LINK_INFORMATION, *PDOKAN_LINK_INFORMATION;
 
 /**
 * \struct DOKAN_MOUNT_POINT_INFO

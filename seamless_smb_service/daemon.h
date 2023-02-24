@@ -15,6 +15,7 @@
 #include <QLocalSocket>
 #include <QThread>
 #include <QTimer>
+#include <QProcess>
 
 
 typedef QList<MountInfo> mlist;
@@ -50,7 +51,7 @@ private:
 
 
 
-    QList<QPair<std::shared_ptr<FileMount>,MountInfo>> mounts;
+    QList<QPair<std::shared_ptr<QProcess>,MountInfo>> mounts;
     std::shared_ptr<QSettings> settings;
 //    QLocalServer *lsocket=nullptr;
 
@@ -63,12 +64,12 @@ private:
 
     QThread *sockThread=nullptr;
 
-    QTimer saveSecurityTimer;
+//    QTimer saveSecurityTimer;
 
 
 private slots:
     void checkStatus();
-    void onSaveSecurity();
+//    void onSaveSecurity();
 
 };
 

@@ -40,3 +40,4 @@ target_compile_definitions(seamless_smb_service_lib PRIVATE  $<CONFIG:Debug>:"_D
 
 target_compile_definitions(seamless_smb_service_test PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
 
+add_subdirectory(process)
