@@ -5,13 +5,25 @@
 #include "filemount.h"
 #include "globals.h"
 #include "logger.h"
+#include <string>
 
 #include <QUuid>
 #include <QSettings>
 #include <QtCore>
+#include "freeDrives.h"
 
-DokanRunner::DokanRunner(int argc, char *argv[])
+
+
+DokanRunner::DokanRunner(int argc, char *argv[]):QObject(nullptr)
 {
+    qDebug() << Q_FUNC_INFO;
+    //    connect(qApp,&QCoreApplication::aboutToQuit,this,[&](){
+    //        qDebug() << "About to quit";
+    //        myexit(0);
+    //    },Qt::DirectConnection);
+
+    connect(this,&DokanRunner::exits,qApp,&QCoreApplication::exit,Qt::QueuedConnection);
+
     qRegisterMetaType<mlist>("mlist");
     QString mountsPath = QString::fromStdString(argv[1]);
     QUuid id = QUuid::fromString(QString::fromStdString(argv[2]));
@@ -42,8 +54,26 @@ DokanRunner::DokanRunner(int argc, char *argv[])
     }
 
     if(filemount){
-        DokanInit();
-        filemount->mount();
+        qDebug() << "Mount Point" << filemount->getMountPoint();
+        auto drives = freeDrives();
+        const std::wstring mountPoint = filemount->getMountPoint();
+        if(drives.contains(QString::fromWCharArray(mountPoint.c_str(),1))){
+            DokanInit();
+            if(filemount->mount()!= DOKAN_SUCCESS)
+                //                                qApp->exit(2);
+               emit exits(2);
+            //                myexit(2);
+            drives = freeDrives();
+            if(drives.contains(QString::fromWCharArray(mountPoint.c_str(),1))){
+                //                               qApp->exit(3);
+                emit exits(3);
+                //                myexit(3);
+            }
+        }else{
+            //                         qApp->exit(3);
+            emit exits(3);
+            //            myexit(3);
+        }
     }
     connect(&saveSecurityTimer,&QTimer::timeout,this,&DokanRunner::onSaveSecurity);
     saveSecurityTimer.start(60*1000); //1 Minute
@@ -52,9 +82,16 @@ DokanRunner::DokanRunner(int argc, char *argv[])
 
 DokanRunner::~DokanRunner()
 {
+    QFile f(QCoreApplication::applicationDirPath()+"/--DD");
+    f.open(QFile::ReadWrite | QFile::Append);
+    QTextStream out(&f);
+    out << filemount->getMountPoint() << Qt::endl;
+
+    qDebug() << Q_FUNC_INFO;
     if(filemount && filemount->isRunning()){
         filemount->unmount();
     }
+    DokanShutdown();
 }
 
 void DokanRunner::unmount()
@@ -79,6 +116,15 @@ void DokanRunner::MountInfoToGlobal(MountInfo info, std::shared_ptr<Globals> &g,
     dokanOptions.MountPoint = g->MountPoint().data();
     dokanOptions.Options = info.options;
     dokanOptions.SingleThread = info.singlethreaded;
+}
+
+void DokanRunner::myexit(int code)
+{
+    if(filemount && filemount->isRunning()){
+        filemount->unmount();
+    }
+    DokanShutdown();
+    exit(code);
 }
 
 void DokanRunner::onSaveSecurity()

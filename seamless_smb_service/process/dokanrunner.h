@@ -17,10 +17,17 @@ public:
     DokanRunner(int argc, char *argv[]);
     ~DokanRunner();
     void unmount();
+
+signals:
+    void exits(int code);
+
 private:
     void MountInfoToGlobal(MountInfo info, std::shared_ptr<Globals> &g, DOKAN_OPTIONS &dokanOptions);
     std::shared_ptr<FileMount> filemount = nullptr;
     QTimer saveSecurityTimer;
+
+    void myexit(int code);
+
 
 private slots:
     void onSaveSecurity();
