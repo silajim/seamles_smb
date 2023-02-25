@@ -4,27 +4,24 @@ Client::Client(QObject *parent) : QObject(parent)
 {
     qRegisterMetaType<QLocalSocket::LocalSocketError>("QLocalSocket::LocalSocketError");
     qRegisterMetaType<QLocalSocket::LocalSocketState>("QLocalSocket::LocalSocketState");
-    localsocket = new QLocalSocket(this);
-//    localsocket->setReadBufferSize(16000);
-    connect(localsocket,&QLocalSocket::errorOccurred,this,&Client::onSocketError);
-    connect(localsocket,&QLocalSocket::stateChanged,[](QLocalSocket::LocalSocketState state){
-        qDebug() << "SOCKET STATE" << state;
-    });
-    connect(&connectTimer,&QTimer::timeout,this,&Client::onConnectTimer);
-    connectTimer.setSingleShot(true);
-    localsocket->connectToServer("seamless_smb_service");
-    if(!localsocket->waitForConnected()){
-        connectTimer.start(30*1000);
-    }
 
-    connect(localsocket,&QLocalSocket::readyRead,this,&Client::onReadyRead);
 }
 
 void Client::close()
 {
-     QMutexLocker lk(&mutex);
-    localsocket->close();
-    localsocket->waitForDisconnected(3000);
+//     QMutexLocker lk(&mutex);
+//    localsocket->close();
+//    localsocket->waitForDisconnected(3000);
+    QMetaObject::invokeMethod(this,&Client::closeSlot,Qt::BlockingQueuedConnection);
+}
+
+void Client::closeSlot()
+{
+    QMutexLocker lk(&mutex);
+    if(localsocket){
+        localsocket->close();
+        localsocket->waitForDisconnected(3000);
+    }
 }
 
 void Client::sendReload()
@@ -37,11 +34,36 @@ void Client::sendReload()
     }
 }
 
+void Client::start()
+{
+    connectTimer = new QTimer(this);
+    localsocket = new QLocalSocket(this);
+//    localsocket->setReadBufferSize(16000);
+    connect(localsocket,&QLocalSocket::errorOccurred,this,&Client::onSocketError);
+    connect(localsocket,&QLocalSocket::stateChanged,this,[](QLocalSocket::LocalSocketState state){
+        qDebug() << "SOCKET STATE" << state;
+    },Qt::QueuedConnection);
+    connect(localsocket,&QLocalSocket::connected,this,[this](){
+        localsocket->write("CONTROLLER");
+        localsocket->flush();
+    },Qt::QueuedConnection);
+
+    connect(connectTimer,&QTimer::timeout,this,&Client::onConnectTimer);
+    connectTimer->setSingleShot(true);
+    localsocket->connectToServer("seamless_smb_service");
+
+    if(!localsocket->waitForConnected(1000)){
+        connectTimer->start(5*1000);
+    }
+
+    connect(localsocket,&QLocalSocket::readyRead,this,&Client::onReadyRead);
+}
+
 void Client::onConnectTimer()
 {
     localsocket->connectToServer("seamless_smb_service");
     if(!localsocket->waitForConnected()){
-        connectTimer.start(30*1000);
+        connectTimer->start(5*1000);
     }
 }
 
@@ -81,5 +103,7 @@ void Client::onReadyRead(){
     }
 
 }
+
+
 
 

@@ -39,7 +39,7 @@ void Logger::print(LPCWSTR format,...)
 #else
     const qulonglong processId = getpid();
 #endif
-    QByteArray s(QTime::currentTime().toString("HH:mm:ss.zzz").toLatin1());
+    QByteArray s(QDateTime::currentDateTime().toString("dd.MM.yyyy-HH:mm:ss").toLatin1());
     s += " [";
     s += QByteArray::number(processId);
     s += "] ";

@@ -35,6 +35,8 @@ public slots:
     void mount(QUuid uuid);
     void unmount(QUuid uuid);
 
+    void start();
+
 private:
 
     void toaddModify(mlist newlist, mlist &toadd,mlist &tomodify);
@@ -53,24 +55,24 @@ private:
 
     QList<QPair<std::shared_ptr<QProcess>,MountInfo>> mounts;
     std::shared_ptr<QSettings> settings;
-//    QLocalServer *lsocket=nullptr;
 
-//    QList<QLocalSocket*> sockets;
 
     unsigned int statTimer=0;
-    QTimer stats;
+    QTimer *stats;
 
     Server *sock=nullptr;
 
     QThread *sockThread=nullptr;
 
-//    QTimer saveSecurityTimer;
+    bool stopping = false;
+
+    bool mountAllrunning = false;
+
 
 
 private slots:
     void checkStatus();
-//    void onSaveSecurity();
-
+//    void mountSlot(QUuid uuid);
 };
 
 #endif // DAEMON_H

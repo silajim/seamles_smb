@@ -58,7 +58,9 @@ ApplicationUI::ApplicationUI(QObject *parent) : QObject(parent)
 
 ApplicationUI::~ApplicationUI()
 {
+    isRunningTimer->stop();
     delete service;
+    service = nullptr;
     if(sock){
         sock->close();
         sock->deleteLater();
@@ -76,14 +78,15 @@ bool ApplicationUI::getIsRunning() const
 
 void ApplicationUI::isRunningTimerTimeout()
 {
-    if(!isInstalled)
+    if(!isInstalled && !service)
         return;
     bool run = service->isRunning();
 //    bool run = true; //For debug using seamless_smb_service_test since the "service" itself is not technically running
     if(run && !sock){
         qDebug() << "Create socket";
-        sockThread = new QThread(this);
+        sockThread = new QThread(this);       
         sock = new Client();
+        connect(sockThread,&QThread::started,sock,&Client::start);
         sock->moveToThread(sockThread);
         sockThread->start();
         connect(sock,&Client::status,model,&MountListModel::setRunning);

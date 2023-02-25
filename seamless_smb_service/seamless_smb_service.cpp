@@ -17,7 +17,9 @@ void seamless_smb_service::start()
     if(!daemon && !dthread){
         daemon = new Daemon();
         dthread = new QThread(this);
-        connect(dthread,&QThread::finished,dthread,&QThread::deleteLater);
+//        connect(dthread,&QThread::finished,dthread,&QThread::deleteLater);
+        connect(dthread,&QThread::started,daemon,&Daemon::start);
+        connect(daemon,&Daemon::destroyed,dthread,&QThread::quit,Qt::DirectConnection);
         daemon->moveToThread(dthread);
         dthread->start();
     }
@@ -27,11 +29,15 @@ void seamless_smb_service::stop()
 {
     qDebug() << "Stop Service";
     if(daemon && dthread){
-        connect(daemon,&QObject::destroyed,dthread,&QThread::quit);
+        QCoreApplication::processEvents();
         daemon->deleteLater();
-        dthread->exit();
+        QCoreApplication::processEvents();
+//        dthread->exit();
+        dthread->wait(3*1000);
+        delete dthread;
         daemon = nullptr;
         dthread = nullptr;
+         qDebug() << "Stop Service END";
     }
 }
 

@@ -18,8 +18,11 @@ public:
     explicit Server(QObject *parent = nullptr);
     ~Server();
 
+
 public slots:
     void sendStatus(QUuid id, bool running);
+    void sendStatusSlot(QUuid id, bool running);
+    void start();
 
 signals:
     void reloadMounts();
@@ -28,17 +31,20 @@ signals:
     void mount(QUuid uuid);
     void unmount(QUuid uuid);
 
+    void mountok(QUuid uuid);
+    void mounterr(QUuid uuid);
+
 
 private:
     QLocalServer *lsocket=nullptr;
-    QLocalSocket* sockets=nullptr;
+    QList<QLocalSocket*> sockets;
+    QLocalSocket* controller=nullptr;
 
     std::mutex mutex;
 private slots:
     void onnewConnection();
     void onaboutToClose();
     void onReadyRead();
-    void sendStatusSlot(QUuid id, bool running);
 
 };
 

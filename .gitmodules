@@ -1,6 +1,7 @@
 [submodule "qt-solutions"]
 	path = qt-solutions
 	url = https://github.com/silajim/qt-solutions.git
+	branch = master
 [submodule "freeDrive"]
 	path = freeDrive
 	url = https://github.com/silajim/FreeDrive.git

@@ -17,6 +17,7 @@ public:
 
 public slots:
     void sendReload();
+    void start();
 
 signals:
     void status(QUuid id,bool running);
@@ -25,11 +26,12 @@ private slots:
     void onConnectTimer();
     void onSocketError(QLocalSocket::LocalSocketError error);
     void onReadyRead();
+    void closeSlot();
 
 private:
     QLocalSocket *localsocket=nullptr;
     QMutex mutex;
-    QTimer connectTimer;
+    QTimer *connectTimer;
 
 };
 

@@ -64,7 +64,7 @@ int FileMount::mount()
     if(mounted)
         return DOKAN_SUCCESS;
 
-    std::lock_guard<std::mutex> lg (mutex);
+    std::lock_guard<std::mutex> lg (mutex);    
 
 
     memset(&dokanOperations,0,sizeof(DOKAN_OPERATIONS));

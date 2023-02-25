@@ -44,6 +44,7 @@ set(CMAKE_CONFIGURATION_TYPES
 ################################################################################
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 add_subdirectory(seamless_smb_lib)
+add_subdirectory(freeDrive)
 add_subdirectory(qt-solutions/qtservice/src)
 add_subdirectory(seamless_smb_common)
 add_subdirectory(seamless_smb_service)
@@ -195,7 +196,8 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
         "_UNICODE"
     )
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
+     target_compile_definitions(${PROJECT_NAME} PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "UNICODE;"        "_UNICODE"       )
+#    target_compile_definitions(${PROJECT_NAME} PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
 #    target_compile_definitions(seamless_smb_lib PRIVATE  $<CONFIG:Debug>:"_DEBUG"> $<CONFIG:Release>"NDEBUG">  "WIN32;"        "_CONSOLE;"        "UNICODE;"        "_UNICODE"       )
 
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
