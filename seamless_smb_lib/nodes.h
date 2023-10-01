@@ -46,6 +46,9 @@ struct Nodes{
     bool deleteFileNode(std::wstring fname);
     bool deleteFileNode( std::shared_ptr<filenode> node);
 
+    std::mutex writeCountMutex;
+    std::map<HANDLE, std::atomic<uint8_t>> writeCounts;
+
 private:
      std::shared_ptr<filenode> findFileNodeP(std::wstring fname);
 //    std::mutex m2;

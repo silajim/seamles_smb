@@ -29,7 +29,7 @@ THE SOFTWARE.
 #define FILENODE_H_
 
 #include <dokan/dokan.h>
-#include <dokan/fileinfo.h>
+//#include <dokan/fileinfo.h>
 
 //#include "memfs_helper.h"
 

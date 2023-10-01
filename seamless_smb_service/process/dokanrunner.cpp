@@ -12,7 +12,7 @@
 #include <QtCore>
 #include "freeDrives.h"
 
-
+#include "otherlogger.h"
 
 DokanRunner::DokanRunner(int argc, char *argv[]):QObject(nullptr)
 {
@@ -45,10 +45,11 @@ DokanRunner::DokanRunner(int argc, char *argv[]):QObject(nullptr)
             qDebug() << "SAVE LOGGER" << savePath;
 
             std::shared_ptr<Logger> log = std::make_shared<Logger>(savePath,info.debug);
+            std::shared_ptr<OtherLogger> otherlog = std::make_shared<OtherLogger>(savePath,true);//(savePath,info.debug);
 
             qDebug() << "Log Created";
 
-            filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions,log);
+            filemount = std::make_shared<FileMount>(globals,info.debug,info.cerr,dokanOptions,log,otherlog);
             break;
         }
     }

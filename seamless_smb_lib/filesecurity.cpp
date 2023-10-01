@@ -2,7 +2,7 @@
 #include <sddl.h>
 
 #include "dokan/dokan.h"
-#include "dokan/fileinfo.h"
+//#include "dokan/fileinfo.h"
 
 
 //#include "filesecurity.h"

@@ -78,12 +78,13 @@ void Logger::print(LPCWSTR format,...)
 
     char * c = (char*)malloc(length*sizeof (char));
     wcstombs_s(NULL,c,length*sizeof (char),outputString,length * sizeof(WCHAR));
-    s.append(c,length);
+    s.append(c,length-1);
 
     free(c);
     _freea(buffer);
 
-    s += '\n';
+//    if(c[length-1] != '\n')
+//        s += '\n';
 
     f->write(s);
     f->flush();
@@ -98,7 +99,7 @@ void Logger::print(LPCWSTR format,...)
         auto fileList = dir.entryInfoList();
         f->close();
         delete f;
-        if(fileList.size()>3){
+        if(fileList.size()>30){
 //            QString toRemove =
             QFile::remove(fileList.last().absoluteFilePath());
         }

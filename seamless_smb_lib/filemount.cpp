@@ -10,7 +10,7 @@
 #include <boost/dll/runtime_symbol_info.hpp>
 
 
-FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestderr, DOKAN_OPTIONS dokanOptions, std::shared_ptr<DbgPrint> print)
+FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestderr, DOKAN_OPTIONS dokanOptions, std::shared_ptr<DbgPrint> print, std::shared_ptr<DbgPrint> otherPrint)
 {
     std::cout << "FileMount::FileMount" << std::endl;
 
@@ -27,16 +27,20 @@ FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestder
     m_context->nodes = std::make_shared<Nodes>();
     m_context->winsec = std::make_shared<WinSec>( m_context->print);
 
+    //dokanOptions.SingleThread = TRUE;
     dokanOptions.Version = DOKAN_VERSION;
     dokanOptions.MountPoint = globals->MountPoint().data();
     dokanOptions.UNCName = globals->UNCName().c_str();
 
     dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(m_context.get());
 
+    dokanOptions.Options = DOKAN_OPTION_ALLOW_IPC_BATCHING; //| DOKAN_OPTION_MOUNT_MANAGER;
+
     m_dokanOptions = dokanOptions;
 
 
     std::wstring rootdir = globals->RootDirectory();
+    m_context->cache = std::make_shared<Cache>(rootdir , otherPrint);
     boost::filesystem::path program_location = boost::dll::program_location().parent_path();
     std::wstring exec_location = program_location.generic_wstring();
     std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');

@@ -38,27 +38,18 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext &, const QString 
     ts << txt << Qt::endl;
 }
 
-//    static void exitQt(int sig) {
-//        std::cout << "Exit Signal " << sig << std::endl;
-//        QCoreApplication::exit(0);
-//    }
-//};
-
-//void SignalHandler(int signal)
-//{
-//    QFile f(QCoreApplication::applicationDirPath()+"/--CC");
-//    f.open(QFile::WriteOnly);
-//    std::cout << "SIGNAL GOT " << signal << std::endl;
-//    qDebug() << "SIGNAL GOT" << signal;
-//    QCoreApplication::exit(0);
+//void exitfunc(){
+//    qDebug() << "exitfunc";
 //}
 
 HWND hwnd = NULL;
 ATOM _atom = NULL;
+
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam){
-    std::cout << "WNDPROC " << uMsg << std::endl;
+//    std::cout << "WNDPROC " << uMsg << std::endl;
     qDebug() << "WNDPROC" << uMsg;
     if(uMsg == WM_CLOSE){
+        qDebug() << "WNDPROC" << uMsg << "VM_CLOSE";
         QFile f(QCoreApplication::applicationDirPath()+"\\--BB");
         f.open(QFile::WriteOnly);
 //         qApp->quit();
@@ -68,7 +59,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
          return DefWindowProc(hwnd, uMsg, wParam, lParam);
 //         return FALSE;
     }
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    return TRUE; //DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 int main(int argc, char *argv[])
@@ -82,11 +73,10 @@ int main(int argc, char *argv[])
     uid = uid.mid(0,10);
     qInstallMessageHandler(myMessageHandler);
     QCoreApplication app(argc,argv);
+    app.connect(&app,&QCoreApplication::aboutToQuit ,[](){
+          qDebug() << "About to quit";
+        });
     srand((unsigned) time(NULL));
-
-//    wchar_t rand_number [10];
-
-//    _snwprintf_s(rand_number,10,L"%d",rand());
 
     const std::wstring wstr = L"smb process window" + std::to_wstring(rand());
 
@@ -134,32 +124,12 @@ int main(int argc, char *argv[])
           qDebug() << "HWND OK";
       }
 
-//    QString fullp ="G:\\AASTDlog-"+uid+".txt";
-
-//    std::ofstream ofs(fullp.toStdString());
-//    std::streambuf* oldrdbuf = std::cerr.rdbuf(ofs.rdbuf());
-
-//    std::cerr.rdbuf(ofs.rdbuf());
-//    std::clog.rdbuf(ofs.rdbuf());
-//    std::cout.rdbuf(ofs.rdbuf());
-
-//    std::cout.flush();
-
-//    signal(SIGINT, SignalHandler);
-//    signal(SIGTERM, SignalHandler);
-//    signal(SIGBREAK, SignalHandler);
-//    signal(SIGABRT, SignalHandler);
-
-
-
-
-//    CleanExit ex;
-
-
 
     DokanRunner runner(argc,argv);
 
     int ret = app.exec();
+
+    qDebug() << "Exec done";
 
     if(_atom!=NULL){
         UnregisterClassW(wc.lpszClassName,wc.hInstance);

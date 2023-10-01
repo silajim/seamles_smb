@@ -215,6 +215,7 @@ void Daemon::add(MountInfo info)
     //    qDebug() << "Mount Created";
 
     auto p = std::make_shared<QProcess>(this);
+
     p->setProgram(QCoreApplication::applicationDirPath()+"/"+"seamless_smb_service_process.exe");
     p->setArguments({settings->fileName(),info.uuid.toString()});
     qDebug()<< info.RootDirectory << "ARGS" << p->arguments();
@@ -291,6 +292,22 @@ void Daemon::mount(QUuid uuid)
             mount.first->waitForStarted(500);
             bool running = mount.first->state() == QProcess::Running;
             sock->sendStatus(mount.second.uuid,running);
+
+            if(running){
+                auto pid = mount.first->processId();
+                HANDLE Handle = OpenProcess(PROCESS_SET_INFORMATION, FALSE,pid);
+                if (Handle){
+                    if(!SetPriorityClass(Handle, HIGH_PRIORITY_CLASS)){
+                      qDebug() << "Unable to set process priority:" << GetLastError();
+                    }else{
+                      qDebug() << "Process priority set to High";
+                    }
+                    CloseHandle(Handle);
+                }else{
+                    qDebug() << "Unable to OPEN process to set priority:" << GetLastError();
+                }
+            }
+
             break;
         }
     }

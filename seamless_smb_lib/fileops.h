@@ -10,9 +10,9 @@
 #include <ostream>
 #include <algorithm>
 
-#include "securityprocessor.h"
+//#include "securityprocessor.h"
 #include "WinSec.h"
-#include "filesecurity.h"
+//#include "filesecurity.h"
 
 
 #include "nodes.h"
@@ -86,6 +86,9 @@ class FileOps
 #define GET_WINSEC_INSTANCE \
   reinterpret_cast<Context*>(DokanFileInfo->DokanOptions->GlobalContext)->winsec
 
+#define GET_CACHE_INSTANCE \
+  reinterpret_cast<Context*>(DokanFileInfo->DokanOptions->GlobalContext)->cache
+
 #define CheckFlag(val, flag)                                             \
     if (val & flag) {                                                            \
     GET_PRINT_INSTANCE->print(L"\t" L#flag L"\n");                                              \
@@ -98,7 +101,7 @@ public:
     static void MirrorCloseFile(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo);
     static void MirrorCleanup(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo);
     static NTSTATUS MirrorReadFile(LPCWSTR FileName, LPVOID Buffer, DWORD BufferLength, LPDWORD ReadLength, LONGLONG Offset, PDOKAN_FILE_INFO DokanFileInfo);
-    static NTSTATUS MirrorWriteFile(LPCWSTR FileName, LPCVOID Buffer, DWORD NumberOfBytesToWrite, LPDWORD NumberOfBytesWritten, LONGLONG Offset, PDOKAN_FILE_INFO DokanFileInfo);
+    static NTSTATUS MirrorWriteFile(const LPCWSTR FileName, const LPCVOID Buffer, DWORD NumberOfBytesToWrite, LPDWORD NumberOfBytesWritten, const LONGLONG Offset, PDOKAN_FILE_INFO DokanFileInfo);
     static NTSTATUS MirrorFlushFileBuffers(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo);
     static NTSTATUS MirrorGetFileInformation(LPCWSTR FileName, LPBY_HANDLE_FILE_INFORMATION HandleFileInformation, PDOKAN_FILE_INFO DokanFileInfo);
     static NTSTATUS MirrorFindFiles(LPCWSTR FileName, PFillFindData FillFindData, PDOKAN_FILE_INFO DokanFileInfo);

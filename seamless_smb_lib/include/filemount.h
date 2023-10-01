@@ -17,7 +17,7 @@ class Context;
 class SEAMLESS_SMB_LIB_EXPORT FileMount
 {
 public:
-    FileMount(std::shared_ptr<Globals> globals,bool debug,bool usestderr ,DOKAN_OPTIONS dokanOptions, std::shared_ptr<DbgPrint> print=nullptr);
+    FileMount(std::shared_ptr<Globals> globals,bool debug,bool usestderr ,DOKAN_OPTIONS dokanOptions, std::shared_ptr<DbgPrint> print=nullptr , std::shared_ptr<DbgPrint> otherPrint=nullptr);
     int mount();
     void unmount();
     bool isRunning();
