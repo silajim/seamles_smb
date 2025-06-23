@@ -9,25 +9,23 @@
 #include "context.h"
 #include <boost/dll/runtime_symbol_info.hpp>
 
-
 FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestderr, DOKAN_OPTIONS dokanOptions, std::shared_ptr<DbgPrint> print, std::shared_ptr<DbgPrint> otherPrint)
 {
     std::cout << "FileMount::FileMount" << std::endl;
 
-    memset(&m_dokanOptions,0,sizeof(DOKAN_OPTIONS));    
-
+    memset(&m_dokanOptions, 0, sizeof(DOKAN_OPTIONS));
 
     m_context = std::make_shared<Context>();
     m_context->globals = globals;
 
-    if(!print)
-        m_context->print = std::make_shared<DbgPrint>(usestderr,debug);
+    if (!print)
+        m_context->print = std::make_shared<DbgPrint>(usestderr, debug);
     else
         m_context->print = print;
     m_context->nodes = std::make_shared<Nodes>();
-    m_context->winsec = std::make_shared<WinSec>( m_context->print);
+    m_context->winsec = std::make_shared<WinSec>(m_context->print);
 
-    //dokanOptions.SingleThread = TRUE;
+    // dokanOptions.SingleThread = TRUE;
     dokanOptions.Version = DOKAN_VERSION;
     dokanOptions.MountPoint = globals->MountPoint().data();
     dokanOptions.UNCName = globals->UNCName().c_str();
@@ -38,23 +36,23 @@ FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestder
 
     m_dokanOptions = dokanOptions;
 
-
     std::wstring rootdir = globals->RootDirectory();
-    m_context->cache = std::make_shared<Cache>(rootdir , otherPrint);
+    m_context->cache = std::make_shared<Cache>(rootdir, otherPrint);
     boost::filesystem::path program_location = boost::dll::program_location().parent_path();
-    std::wstring exec_location = program_location.generic_wstring();
-    std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
+    std::wstring            exec_location = program_location.generic_wstring();
+    std::replace(rootdir.begin(), rootdir.end(), L'\\', L'_');
 
     std::wcout << "Program Location " << exec_location << std::endl;
 
-    std::wstring datfile = exec_location+L"\\"+rootdir+L".dat";
+    std::wstring datfile = exec_location + L"\\" + rootdir + L".dat";
 
-    if(boost::filesystem::exists(datfile)){
-         m_context->print->print(L"FILEMOUNT Dat Location -- %s",datfile.c_str());
+    if (boost::filesystem::exists(datfile))
+    {
+        m_context->print->print(L"FILEMOUNT Dat Location -- %s", datfile.c_str());
 
         std::filebuf filer;
-        filer.open(datfile,std::ios_base::in|std::ios_base::binary);
-        std::istream is(&filer);
+        filer.open(datfile, std::ios_base::in | std::ios_base::binary);
+        std::istream                    is(&filer);
         boost::archive::binary_iarchive ir(is, boost::archive::no_header);
 
         ir >> *(m_context->nodes);
@@ -65,13 +63,12 @@ FileMount::FileMount(std::shared_ptr<Globals> globals, bool debug, bool usestder
 
 int FileMount::mount()
 {
-    if(mounted)
+    if (mounted)
         return DOKAN_SUCCESS;
 
-    std::lock_guard<std::mutex> lg (mutex);    
+    std::lock_guard<std::mutex> lg(mutex);
 
-
-    memset(&dokanOperations,0,sizeof(DOKAN_OPERATIONS));
+    memset(&dokanOperations, 0, sizeof(DOKAN_OPERATIONS));
 
     dokanOperations.ZwCreateFile = &FileOps::MirrorCreateFile;
     dokanOperations.Cleanup = &FileOps::MirrorCleanup;
@@ -99,21 +96,27 @@ int FileMount::mount()
     dokanOperations.FindStreams = &FileOps::MirrorFindStreams;
     dokanOperations.Mounted = &FileOps::MirrorMounted;
 
-    int status = DokanCreateFileSystem(&m_dokanOptions, &dokanOperations,&handle);
-    if(status == DOKAN_SUCCESS){
+    m_context->print->print(L"Starting mount of %s,%s", getMountPoint().c_str(), getRootDir().c_str());
+
+    int status = DokanCreateFileSystem(&m_dokanOptions, &dokanOperations, &handle);
+    if (status == DOKAN_SUCCESS)
+    {
         mounted = true;
-        m_context->print->print(L"%s,%s successfully Mounted\n",getMountPoint().c_str(),getRootDir().c_str());
-    }else{
-        m_context->print->print(L"%s,%s NOT Mounted, ERROR: %d\n",getMountPoint().c_str(),getRootDir().c_str(),status);
+        m_context->print->print(L"%s,%s successfully Mounted\n", getMountPoint().c_str(), getRootDir().c_str());
+    }
+    else
+    {
+        m_context->print->print(L"%s,%s NOT Mounted, ERROR: %d\n", getMountPoint().c_str(), getRootDir().c_str(), status);
     }
     return status;
 }
 
 void FileMount::unmount()
 {
-    std::lock_guard<std::mutex> lg (mutex);
+    std::lock_guard<std::mutex> lg(mutex);
 
-    if(mounted && handle && DokanIsFileSystemRunning(handle)){
+    if (mounted && handle && DokanIsFileSystemRunning(handle))
+    {
         //        DokanRemoveMountPoint(m_context->globals->MountPoint().c_str());
         DokanCloseHandle(handle);
 
@@ -122,48 +125,49 @@ void FileMount::unmount()
 
         saveSecurity();
     }
-
 }
 
 bool FileMount::isRunning()
 {
-    std::lock_guard<std::mutex> lg (mutex);
+    std::lock_guard<std::mutex> lg(mutex);
 
-    if(mounted && handle){
+    if (mounted && handle)
+    {
         bool running = DokanIsFileSystemRunning(handle);
-        if(!running){
+        if (!running)
+        {
             mounted = false;
             DokanCloseHandle(handle);
             handle = NULL;
         }
         return running;
-
     }
     return false;
 }
 
 void FileMount::join()
 {
-    DokanWaitForFileSystemClosed(handle,INFINITE);
+    DokanWaitForFileSystemClosed(handle, INFINITE);
 }
 
 void FileMount::saveSecurity()
 {
     std::lock_guard<std::mutex> lg(m_context->nodes->m_mutex);
 
-    std::wstring rootdir = m_context->globals->RootDirectory();
+    std::wstring            rootdir = m_context->globals->RootDirectory();
     boost::filesystem::path program_location = boost::dll::program_location().parent_path();
-    std::wstring exec_location = program_location.generic_wstring();
-    std::replace(rootdir.begin(),rootdir.end(),L'\\',L'_');
+    std::wstring            exec_location = program_location.generic_wstring();
+    std::replace(rootdir.begin(), rootdir.end(), L'\\', L'_');
 
-    std::wstring datfile = exec_location+L"\\"+rootdir+L".dat";
+    std::wstring datfile = exec_location + L"\\" + rootdir + L".dat";
     std::wcout << "Root dir" << rootdir << std::endl;
     std::wcout << "Write file " << datfile << std::endl;
 
     std::filebuf file;
 
-    if(file.open(datfile,std::ios_base::out|std::ios_base::binary|std::ios_base::trunc)){
-        std::ostream os(&file);
+    if (file.open(datfile, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc))
+    {
+        std::ostream                    os(&file);
         boost::archive::binary_oarchive ar(os, boost::archive::no_header);
 
         ar << *(m_context->nodes);
