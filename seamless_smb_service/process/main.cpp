@@ -56,7 +56,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
     if (uMsg == WM_CLOSE)
     {
         qDebug() << "WNDPROC" << uMsg << "VM_CLOSE";
-        QFile f(QCoreApplication::applicationDirPath() + uncName + "--BB");
+        QFile f(QCoreApplication::applicationDirPath() + "\\" + uncName + "--BB");
         f.open(QFile::WriteOnly);
         //         qApp->quit();
         qApp->exit(0);
